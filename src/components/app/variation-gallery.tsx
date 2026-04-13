@@ -2,10 +2,11 @@
 
 import { useMemo } from 'react'
 
-import { Box, Button, Grid, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, HStack, Stack, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
+import { CardRowLoop } from '@/components/app/card-row-loop'
 import { generateSmartVariations } from '@/lib/variations'
 import type { GeneratedVariation, PatternSettings } from '@/types/domain'
 import { useAppStore } from '@/store/app-store'
@@ -69,18 +70,17 @@ function SelectorCard(props: {
   return (
     <MotionBox
       bg={color}
-      border={props.isSelected ? '3px solid rgba(255,255,255,0.96)' : '1px solid rgba(255,255,255,0.55)'}
+      border={
+        props.isSelected ? '3px solid rgba(255,255,255,0.96)' : '1px solid rgba(255,255,255,0.55)'
+      }
       borderRadius="24px"
       boxShadow={
-        props.isSelected
-          ? '0 26px 60px rgba(17,16,13,0.28)'
-          : '0 12px 28px rgba(17,16,13,0.16)'
+        props.isSelected ? '0 26px 60px rgba(17,16,13,0.28)' : '0 12px 28px rgba(17,16,13,0.16)'
       }
       color={foreground}
       cursor="pointer"
       h={{ base: '230px', md: '320px' }}
       onClick={props.onSelect}
-      overflow="hidden"
       p={{ base: '4', md: '5' }}
       position="relative"
       whileHover={{ scale: 1.02, y: -4 }}
@@ -101,18 +101,20 @@ function SelectorCard(props: {
           >
             Interface Craft
           </Text>
-          <Text
-            fontFamily="Georgia, serif"
-            fontSize={{ base: '2xl', md: '4xl' }}
-            lineHeight="0.88"
-          >
+          <Text fontFamily="Georgia, serif" fontSize={{ base: '2xl', md: '4xl' }} lineHeight="0.88">
             Library Card
           </Text>
         </Stack>
 
         <HStack align="end" justify="space-between">
           <Stack gap="1">
-            <Text fontSize="xs" fontWeight="700" letterSpacing="0.18em" opacity="0.56" textTransform="uppercase">
+            <Text
+              fontSize="xs"
+              fontWeight="700"
+              letterSpacing="0.18em"
+              opacity="0.56"
+              textTransform="uppercase"
+            >
               Member
             </Text>
             <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700" opacity="0.9">
@@ -120,7 +122,13 @@ function SelectorCard(props: {
             </Text>
           </Stack>
           <Stack gap="1" textAlign="right">
-            <Text fontSize="xs" fontWeight="700" letterSpacing="0.18em" opacity="0.56" textTransform="uppercase">
+            <Text
+              fontSize="xs"
+              fontWeight="700"
+              letterSpacing="0.18em"
+              opacity="0.56"
+              textTransform="uppercase"
+            >
               Issued On
             </Text>
             <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700" opacity="0.9">
@@ -162,7 +170,9 @@ export function VariationGallery() {
   if (!activeDraft) {
     return (
       <Stack gap="4">
-        <Text color="var(--lanyard-muted)">Start a new card in the wizard to generate variations.</Text>
+        <Text color="var(--lanyard-muted)">
+          Start a new card in the wizard to generate variations.
+        </Text>
         <Button onClick={() => router.push('/wizard')} w="fit-content">
           Back to wizard
         </Button>
@@ -171,66 +181,49 @@ export function VariationGallery() {
   }
 
   return (
-    <Stack gap="6">
-      <Text color="var(--lanyard-muted)" maxW="3xl">
-        Pick from a field of related library-card directions. Each option stays close to your
-        current settings while shifting density, rhythm, spacing, and tone so the selector feels
-        curated instead of random.
-      </Text>
-      <Stack gap="6" overflow="hidden">
+    <Stack gap="0">
+      <Stack gap="0">
         {[0, 1, 2].map((rowIndex) => {
           const rowVariations = variations.slice(rowIndex * 4, rowIndex * 4 + 4)
 
-          return (
-            <Box key={rowIndex} overflow="hidden">
-              <MotionBox
-                animate={{
-                  x: rowIndex % 2 === 0 ? ['0%', '-16%'] : ['-12%', '0%'],
-                }}
-                display="flex"
-                gap="6"
-                transition={{
-                  duration: rowIndex % 2 === 0 ? 24 : 28,
-                  ease: 'linear',
-                  repeat: Number.POSITIVE_INFINITY,
-                  repeatType: 'mirror',
-                }}
-                width="max-content"
+          if (rowVariations.length === 0) {
+            return null
+          }
+
+          const rowItems = rowVariations.map((variation) => ({
+            ariaLabel: `Select ${variation.id} variation`,
+            node: (
+              <Box
+                className="row"
+                minW={{ base: '240px', md: '320px' }}
+                w={{ base: '240px', md: '320px' }}
               >
-                {[...rowVariations, ...rowVariations].map((variation, index) => (
-                  <Box key={`${variation.id}-${index}`} minW={{ base: '240px', md: '320px' }} w={{ base: '240px', md: '320px' }}>
-                    <SelectorCard
-                      isSelected={selectedVariationId === variation.id}
-                      onSelect={() => selectVariation(variation.design)}
-                      variation={variation}
-                    />
-                  </Box>
-                ))}
-              </MotionBox>
+                <SelectorCard
+                  isSelected={selectedVariationId === variation.id}
+                  onSelect={() => selectVariation(variation.design)}
+                  variation={variation}
+                />
+              </Box>
+            ),
+          }))
+
+          return (
+            <Box key={rowIndex} className="row">
+              <CardRowLoop
+                ariaLabel={`Variation row ${rowIndex + 1}`}
+                edgePadding={36}
+                fadeOut
+                gap={24}
+                items={rowItems}
+                pauseOnHover
+                scaleOnHover
+                speed={rowIndex % 2 === 0 ? 40 : 30}
+                direction={rowIndex % 2 === 0 ? 'left' : 'right'}
+              />
             </Box>
           )
         })}
       </Stack>
-      <Grid gap="4" templateColumns={{ base: '1fr', md: '1fr auto' }}>
-        <Box bg="rgba(255,255,255,0.62)" borderRadius="24px" p="4">
-          <Text fontWeight="700">
-            {selectedVariationId
-              ? `Selected: ${selectedVariationId.replace(`${activeDraft.id}_`, '').replaceAll('_', ' ')}`
-              : 'Select a card direction to continue'}
-          </Text>
-          <Text color="var(--lanyard-muted)" mt="1">
-            You can still refine colors, pattern parameters, portrait, and signature after choosing
-            a direction.
-          </Text>
-        </Box>
-        <Button
-          alignSelf="stretch"
-          onClick={() => router.push('/editor')}
-          px="8"
-        >
-          Continue with selected card
-        </Button>
-      </Grid>
     </Stack>
   )
 }

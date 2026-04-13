@@ -6,6 +6,7 @@ import { Box, Button, Grid, HStack, Stack, Text } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
+import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
 
 const sampleCards = [
@@ -56,7 +57,13 @@ function BackgroundSampleCard(props: { accent: string; foreground: string }) {
       <Box bottom="20px" left="20px" position="absolute" right="20px">
         <HStack justify="space-between">
           <Stack gap="1">
-            <Text fontSize="xs" fontWeight="700" letterSpacing="0.18em" opacity="0.65" textTransform="uppercase">
+            <Text
+              fontSize="xs"
+              fontWeight="700"
+              letterSpacing="0.18em"
+              opacity="0.65"
+              textTransform="uppercase"
+            >
               Member
             </Text>
             <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700">
@@ -64,7 +71,13 @@ function BackgroundSampleCard(props: { accent: string; foreground: string }) {
             </Text>
           </Stack>
           <Stack gap="1" textAlign="right">
-            <Text fontSize="xs" fontWeight="700" letterSpacing="0.18em" opacity="0.65" textTransform="uppercase">
+            <Text
+              fontSize="xs"
+              fontWeight="700"
+              letterSpacing="0.18em"
+              opacity="0.65"
+              textTransform="uppercase"
+            >
               Issued On
             </Text>
             <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700">
@@ -93,16 +106,7 @@ export default function WizardPage() {
   }, [activeDraft, createNewDraft])
 
   return (
-    <Box
-      left="50%"
-      minH="calc(100vh - 220px)"
-      overflow="hidden"
-      position="relative"
-      right="50%"
-      width="100vw"
-      ml="calc(-50vw + 50%)"
-      mr="calc(-50vw + 50%)"
-    >
+    <Box minH="calc(100vh - 220px)" overflow="hidden" position="relative" width="100vw">
       <Grid
         filter="blur(2px)"
         gap={{ base: '4', md: '8' }}
@@ -119,12 +123,7 @@ export default function WizardPage() {
         ))}
       </Grid>
 
-      <Box
-        backdropFilter="blur(14px)"
-        bg="rgba(255,255,255,0.34)"
-        inset="0"
-        position="absolute"
-      />
+      <Box backdropFilter="blur(14px)" bg="rgba(255,255,255,0.34)" inset="0" position="absolute" />
 
       <Box
         display="grid"
@@ -135,11 +134,9 @@ export default function WizardPage() {
         py={{ base: '8', md: '14' }}
       >
         <Stack
-          backdropFilter="blur(24px)"
-          bg="linear-gradient(135deg, rgba(201,237,251,0.86) 0%, rgba(255,255,255,0.78) 38%, rgba(228,219,203,0.72) 100%)"
+          {...frostedGlass}
           border="1px solid rgba(255,255,255,0.82)"
           borderRadius="34px"
-          boxShadow="0 30px 90px rgba(30,27,22,0.16)"
           maxW="980px"
           p={{ base: '6', md: '10' }}
           w="full"
