@@ -1,0 +1,183 @@
+'use client'
+
+import { useEffect } from 'react'
+
+import { Box, Button, Grid, HStack, Stack, Text } from '@chakra-ui/react'
+import { useRouter } from 'next/navigation'
+
+import { ProfileReviewForm } from '@/components/app/profile-review-form'
+import { useAppStore } from '@/store/app-store'
+
+const sampleCards = [
+  { accent: '#f0e6d3', foreground: '#2d241b' },
+  { accent: '#54ef8c', foreground: '#173c20' },
+  { accent: '#2496ca', foreground: '#eef8fe' },
+  { accent: '#1f1d1d', foreground: '#fbf5e8' },
+  { accent: '#dd4215', foreground: '#fff1df' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
+  { accent: '#a7f0ef', foreground: '#2c6170' },
+  { accent: '#304ce9', foreground: '#edf1ff' },
+  { accent: '#8b0089', foreground: '#f8d9ff' },
+  { accent: '#f06925', foreground: '#fff0df' },
+  { accent: '#046f0d', foreground: '#e8fce7' },
+  { accent: '#564c37', foreground: '#f1ebdf' },
+]
+
+function BackgroundSampleCard(props: { accent: string; foreground: string }) {
+  return (
+    <Box
+      bg={props.accent}
+      borderRadius="24px"
+      boxShadow="0 12px 26px rgba(17,16,13,0.14)"
+      color={props.foreground}
+      h={{ base: '180px', md: '250px' }}
+      p={{ base: '4', md: '5' }}
+      position="relative"
+      w="100%"
+    >
+      <Stack gap="2">
+        <Text
+          fontFamily="Georgia, serif"
+          fontSize={{ base: 'lg', md: '2xl' }}
+          fontWeight="500"
+          lineHeight="1"
+        >
+          Interface Craft
+        </Text>
+        <Text
+          fontFamily="Georgia, serif"
+          fontSize={{ base: '2xl', md: '4xl' }}
+          fontWeight="500"
+          lineHeight="0.95"
+        >
+          Library Card
+        </Text>
+      </Stack>
+      <Box bottom="20px" left="20px" position="absolute" right="20px">
+        <HStack justify="space-between">
+          <Stack gap="1">
+            <Text fontSize="xs" fontWeight="700" letterSpacing="0.18em" opacity="0.65" textTransform="uppercase">
+              Member
+            </Text>
+            <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700">
+              New Member
+            </Text>
+          </Stack>
+          <Stack gap="1" textAlign="right">
+            <Text fontSize="xs" fontWeight="700" letterSpacing="0.18em" opacity="0.65" textTransform="uppercase">
+              Issued On
+            </Text>
+            <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700">
+              02/25/26
+            </Text>
+          </Stack>
+        </HStack>
+      </Box>
+    </Box>
+  )
+}
+
+export default function WizardPage() {
+  const router = useRouter()
+  const createNewDraft = useAppStore((state) => state.createNewDraft)
+  const profile = useAppStore((state) => state.profile)
+  const activeDraft = useAppStore((state) => state.activeDraft)
+  const wizard = useAppStore((state) => state.wizard)
+  const setWizardStep = useAppStore((state) => state.setWizardStep)
+  const updateProfile = useAppStore((state) => state.updateProfile)
+
+  useEffect(() => {
+    if (!activeDraft) {
+      createNewDraft()
+    }
+  }, [activeDraft, createNewDraft])
+
+  return (
+    <Box
+      left="50%"
+      minH="calc(100vh - 220px)"
+      overflow="hidden"
+      position="relative"
+      right="50%"
+      width="100vw"
+      ml="calc(-50vw + 50%)"
+      mr="calc(-50vw + 50%)"
+    >
+      <Grid
+        filter="blur(2px)"
+        gap={{ base: '4', md: '8' }}
+        opacity="0.92"
+        p={{ base: '6', md: '10' }}
+        templateColumns={{ base: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }}
+      >
+        {sampleCards.map((card, index) => (
+          <BackgroundSampleCard
+            accent={card.accent}
+            foreground={card.foreground}
+            key={`${card.accent}-${index}`}
+          />
+        ))}
+      </Grid>
+
+      <Box
+        backdropFilter="blur(14px)"
+        bg="rgba(255,255,255,0.34)"
+        inset="0"
+        position="absolute"
+      />
+
+      <Box
+        display="grid"
+        inset="0"
+        placeItems="center"
+        position="absolute"
+        px={{ base: '4', md: '10' }}
+        py={{ base: '8', md: '14' }}
+      >
+        <Stack
+          backdropFilter="blur(24px)"
+          bg="linear-gradient(135deg, rgba(201,237,251,0.86) 0%, rgba(255,255,255,0.78) 38%, rgba(228,219,203,0.72) 100%)"
+          border="1px solid rgba(255,255,255,0.82)"
+          borderRadius="34px"
+          boxShadow="0 30px 90px rgba(30,27,22,0.16)"
+          maxW="980px"
+          p={{ base: '6', md: '10' }}
+          w="full"
+        >
+          <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="500" lineHeight="0.95">
+            Welcome
+          </Text>
+          <Text fontSize={{ base: 'lg', md: '2xl' }} fontWeight="500" mt="1">
+            Please confirm your profile picture, name & role
+          </Text>
+
+          <ProfileReviewForm />
+
+          <HStack justify="space-between" mt="2">
+            <Text color="rgba(27,24,19,0.62)" fontSize="sm">
+              Signed in as {profile.displayName}
+            </Text>
+            <Button
+              bg="#0f4f87"
+              borderRadius="16px"
+              color="white"
+              minW={{ base: '160px', md: '260px' }}
+              onClick={() => {
+                updateProfile((current) => ({
+                  ...current,
+                  displayName: `${current.firstName} ${current.lastName}`.trim(),
+                }))
+                setWizardStep('gallery')
+                router.push('/gallery')
+              }}
+              px="10"
+              size="lg"
+            >
+              Start
+            </Button>
+          </HStack>
+        </Stack>
+      </Box>
+    </Box>
+  )
+}

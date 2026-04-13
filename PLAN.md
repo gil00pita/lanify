@@ -1,130 +1,358 @@
-# Lanyard Card Design Generator: Architecture and Screen-First Plan
+# Project Plan
 
-## Summary
-Build the app in two implementation waves on the current Next.js App Router + TypeScript + Chakra UI starter.
+Lanyard Card Design Generator is a production-oriented Next.js App Router web app for generating, editing, saving, and submitting premium lanyard/member card designs for print.
 
-Wave 1 delivers the full product shell and all primary screens with working business logic, persistent mock auth/data, polished motion, and editable card workflows: `/login`, `/library`, `/wizard`, `/gallery`, `/editor`, `/editor/advanced`, `/profile`, `/print-request`, plus a bootstrap `/` route that redirects based on persisted user/card state. Use Yarn tool.
+- App name: `Lanyard Card Design Generator`
+- Stack: `Next.js 16`, `TypeScript`, `Chakra UI`, `Framer Motion`, `Zustand`
+- Package manager: `yarn`
+- Default branch assumption: `main`
+- Node requirement: `>=20.9.0`
 
-Wave 2 adds the advanced SVG pattern engine and signature toolchain as production-ready subsystems, wired into the already-functional editor, gallery, save flow, and print request logic.
+## Status Snapshot
 
-## Architecture and Screen System
-Use App Router route groups so URLs stay exactly as requested while layouts stay clean:
-- `app/(auth)/login/page.tsx` for the login experience.
-- `app/(app)/layout.tsx` for the authenticated shell shared by library, profile, editor, gallery, and print flow.
-- `app/page.tsx` as a client bootstrap gate that reads persisted mock state, then routes to `/login`, `/wizard`, or `/library`.
+- Current Phase: `Phase 1 - app architecture and screens`
+- Overall Status: `in progress`
+- Last Updated: `2026-04-13 01:24 UTC`
+- Current Focus: `polish the first working app flow and deepen the editor/pattern experience`
+- Next Action: `refine the gallery/editor interactions, improve print-flow UX, and extend the pattern/signature internals`
+- Blocked On: `none`
+- Branch: `main`
+- Owner: `Codex + user`
+- Notes for Resume: `tooling, route groups, persisted store, login, library, wizard, gallery, editor, advanced editor, profile, and print request routes now exist; resume with UI polish and deeper feature fidelity`
 
-Adopt a client-heavy mock architecture because persistence is browser `localStorage`:
-- `src/providers/app-store-provider.tsx` to initialize persisted Zustand state.
-- `src/store` with slices for auth, profile, card designs, wizard session, print requests, and UI/view state.
-- `src/lib/mock-repository` for storage adapters and seeded data so future backend swaps are isolated from UI.
-- `src/lib/domain` for pure business rules such as first-time-user routing, first-print pricing, lock state transitions, and editability checks.
-- `src/theme` for a premium minimal design system with light app surfaces, elevated gallery/library cards, and a dedicated dark advanced-editor palette.
+## Phase Tracker
 
-Define the primary navigation and flow behavior as follows:
-- `/login` accepts any valid-looking email/password and signs into one seeded mock user.
-- After login, if the user has no saved cards, route to `/wizard`; otherwise route to `/library`.
-- `/library` is the post-onboarding home and shows a first tile for “Create New Card” followed by saved designs with status badges and edit/open/print actions.
-- `/wizard` owns the guided flow shell, stepper, and profile review/save checkpoints.
-- `/gallery` is the smart variation browsing screen fed by the current profile plus current pattern settings.
-- `/editor` is the simple editor for selected designs with lightweight customization.
-- `/editor/advanced` is the dark design-tool workspace with left controls, large preview, panel toggles, and instant updates.
-- `/profile` lets the user revise account/profile defaults separately from any single design.
-- `/print-request` is a dedicated multi-step confirmation flow that selects one saved card, shows pricing, warns about lock behavior, and submits a mock print request.
+### Phase 0: Repo/Tooling Stabilization
 
-Use these reusable screen-level components from the start:
-- `AppShell`, `TopNav`, `StatusPill`, `EmptyState`, `SectionHeader`, `StickySummaryPanel`.
-- `AuthCard`, `MockLoginForm`, `RedirectGate`.
-- `WizardStepper`, `WizardFooterActions`, `ProfileReviewForm`, `PortraitUploader`, `BackgroundRemovalPanel`.
-- `VariationGallery`, `VariationRail`, `VariationCard`, `ZoomToCardPreview`.
-- `CardPreview`, `CardFrame`, `PortraitStage`, `CardMetaText`.
-- `SimpleEditorPanel`, `AdvancedEditorLayout`, `PatternControlPanel`, `PreviewToggleBar`.
-- `LibraryGrid`, `CreateNewCardTile`, `CardLibraryItem`, `LockedStateOverlay`.
-- `PrintRequestWizard`, `PricingSummary`, `ConfirmationNotice`.
-- `SignaturePad`, `SignatureToolbar`, `SignaturePlacementOverlay`.
+- Goal: stabilize linting, formatting, package-manager expectations, and the base Next.js starter before feature work.
+- Status: `done`
+- Deliverables:
+  - clean `eslint.config.mjs`
+  - verified `lint` and `build`
+  - `PLAN.md` upgraded to restart-safe tracker
+  - package-manager direction documented
+- Exit Criteria:
+  - ESLint no longer throws config/runtime errors
+  - baseline `build` succeeds
+  - next session can resume from this file alone
 
-## State Model and Public Interfaces
-Use Zustand with `persist` middleware and one app store composed from domain slices. Persist only mock-business data and lightweight UI checkpoints needed to preserve the user flow across refreshes.
+### Phase 1: App Architecture and Screens
 
-Core types to define under `src/types`:
-- `User`, `UserProfile`, `CardDesign`, `PatternSettings`, `Signature`, `PrintRequest`, `GeneratedVariation`, `PaymentState`.
-- `CardStatus = "draft" | "saved" | "submittedForPrint" | "locked"`.
-- `PrintRequestStatus = "draft" | "confirmed" | "submitted"`.
-- `WizardStep = "login" | "profile" | "gallery" | "select" | "edit" | "signature" | "save" | "print"`.
+- Goal: deliver the full route structure, app shell, mock auth, persistent store, and all primary screens with working business logic.
+- Status: `in progress`
+- Deliverables:
+  - authenticated route groups and redirects
+  - login, library, wizard, gallery, editor, advanced editor shell, profile, and print-request routes
+  - persistent mock user/profile/card/print state
+  - premium minimal design system and motion foundation
+- Exit Criteria:
+  - all required routes are navigable
+  - first-time and returning-user flows work
+  - save/edit/lock/print logic works with mock persistence
 
-Important interfaces and boundaries:
-- `AuthRepository` with `login`, `logout`, `getCurrentUser`.
-- `ProfileRepository` with `getProfile`, `saveProfile`, `setTransparentPortrait`.
-- `CardRepository` with `listByUser`, `createDraft`, `saveDesign`, `updateDesign`, `lockDesign`.
-- `PrintRepository` with `listByUser`, `submitRequest`, `getNextPrintPrice`.
-- `VariationService` with `generateFromSeed(profile, baseSettings) => GeneratedVariation[]`.
-- `PatternEngine` with `buildPatternScene(settings, viewport) => PatternScene`.
-- `SignatureService` with `capture`, `clear`, `confirm`, `exportDataUrl`.
-- `CardRules` pure helpers for `isFirstTimeUser`, `canEditCard`, `getCardStatus`, `computePrintPrice`, `submitPrintAndLockCard`.
+### Phase 2: Advanced Pattern Engine
 
-Persisted store shape:
-- `auth`: `isAuthenticated`, `currentUserId`.
-- `profile`: current profile fields plus portrait and transparent portrait references.
-- `cards`: saved designs, active draft id, selected card id.
-- `wizard`: current step, gallery source config, selected variation id, unsaved edits.
-- `print`: print requests, `firstPrintConsumed`.
-- `ui`: editor mode, gallery scroll speed, zoom target, panel open states.
+- Goal: implement the production-ready SVG card background engine and smart variation generation.
+- Status: `not started`
+- Deliverables:
+  - reusable SVG pattern renderer
+  - smart variation generation from seeded settings
+  - instant advanced-editor preview updates
+  - variation gallery wired to current settings
+- Exit Criteria:
+  - pattern controls update preview deterministically
+  - generated variants feel related, not random
+  - advanced editor can power both gallery and saved cards
 
-## Wave 1: Functional Screens and Product Logic
-Implement the screens and flows first with real app logic but placeholder internals where needed:
-- Build the login screen, redirect gate, and library-first routing behavior.
-- Build the library grid with create tile, saved cards, status badges, edit/open actions, and locked-card affordances.
-- Build the wizard flow with profile review, portrait upload UI, mocked background-removal action, variation generation trigger, simple edit step, signature entry step shell, save action, and optional jump into advanced mode before save.
-- Build the print-request flow with card selection, pricing summary, first-free rule, subsequent `£50` pricing, lock warning, and final confirmation that changes card status to locked.
-- Build motion architecture with Framer Motion for page transitions, gallery drift, scroll acceleration, zoom-to-selected-card, and editor/detail transitions.
-- Make the portrait background-removal UX explicit even before real image segmentation exists: upload an image, offer “Remove Background”, show a processing state, and swap to a mocked transparent asset or silhouette treatment.
+### Phase 3: Signature Tools
 
-Structure the card preview system now so later rendering work plugs in cleanly:
-- `CardPreview` always composes background layer, pattern layer, portrait layer, signature layer, and text layer in a fixed front-card layout.
-- The portrait area is always the primary stage for the pattern system.
-- If there is no uploaded portrait, use a stylized transparent silhouette placeholder.
-- Locked cards remain viewable but all edit entry points resolve to read-only preview states.
+- Goal: add mouse/trackpad signature capture and elegant placement on the card.
+- Status: `not started`
+- Deliverables:
+  - canvas signature pad
+  - clear/confirm/re-edit flow
+  - signature export and overlay in card preview
+  - persistence on `CardDesign.signatureData`
+- Exit Criteria:
+  - signature capture works reliably
+  - signature persists across save/load
+  - locked cards remain viewable but non-editable
 
-## Wave 2: Advanced Pattern Engine and Signature Tools
-Implement the pattern engine as a pure SVG subsystem under `src/features/pattern-engine`:
-- Deterministic, config-driven mark generation based on `rows`, `itemsPerRow`, `minOpacity`, `maxOpacity`, `amplitude`, `frequency`, `phaseOffset`, `rowSpacing`, `itemSpacing`, `rotation`, `scale`, `animate`, `animationSpeed`, and `seed`.
-- Pattern marks render in white over black and sit behind the transparent portrait image.
-- Variation generation starts from the active profile and base pattern settings, then produces related, not random, variants by perturbing only bounded settings around the current design.
-- Gallery variants share a family resemblance through a seeded variation algorithm and bounded deltas instead of unrestricted randomization.
-- Advanced editor updates preview instantly from control changes and supports `randomize`, `reset`, `animate wave`, and `generate variations from current settings`.
+### Phase 4: Print Flow Polish and Validation
 
-Implement signature capture as a separate tool under `src/features/signature`:
-- Use a canvas-based drawing pad for pointer/mouse/trackpad capture.
-- Export confirmed signature strokes to a transparent data URL so the saved signature overlays the SVG card preview cleanly.
-- Support draw, clear, confirm, and re-edit.
-- Store signature metadata and exported image data on `CardDesign.signatureData`.
-- Signature placement is fixed and elegant on the card front, not freeform drag-and-drop in v1.
+- Goal: finish the print-request experience, pricing rules, locking behavior, and acceptance-level validation.
+- Status: `not started`
+- Deliverables:
+  - print-request wizard polish
+  - first-print-free and later `£50` pricing summary
+  - lock-state enforcement across all entry points
+  - test coverage for core business rules
+- Exit Criteria:
+  - print pricing and lock behavior are consistent everywhere
+  - critical route/business tests pass
+  - app is ready for backend integration follow-up
 
-## Test Plan and Acceptance Criteria
-Add tests around business rules and route behavior first:
-- Login redirects to `/wizard` for users with zero saved cards.
-- Login redirects to `/library` for returning users.
-- Creating and saving the first card makes `/library` the default post-login home.
-- Locked cards cannot enter editable simple or advanced editor states.
-- First print request is `£0`; every later request is `£50`.
-- Submitting a print request locks only the selected card and does not block new card creation.
+## Task Board
 
-Add component and interaction coverage for critical UX:
-- Wizard step persistence across refresh.
-- Gallery selection keeps edits when returning from editor back to gallery.
-- Simple editor and advanced editor both update the same active draft.
-- Background-removal mock toggles portrait source without breaking preview composition.
-- Signature clear/confirm behaviors update the preview and saved design.
-- Status badges and locked overlays reflect store state correctly.
+### Backlog
 
-Acceptance criteria for the two-wave delivery:
-- Wave 1 ends with all screens navigable and fully wired to persistent mock data, including save and print flows.
-- Wave 2 ends with production-quality SVG pattern rendering, deterministic smart variations, and signature capture integrated into save/edit/print workflows.
+- Build SVG pattern engine under `src/features/pattern-engine`
+- Build signature tools under `src/features/signature`
+- Add tests for routing, pricing, lock behavior, and persistence
+- Refine gallery selection and zoom-to-detail polish
+- Improve locked-card read-only affordances and print confirmation UX
+- Add service boundaries for future auth/storage/payment integrations
 
-## Assumptions and Defaults
-- One seeded mock user is used for all login attempts in this phase.
-- Browser `localStorage` is the only persistence layer for now.
-- The visual direction is premium minimal, with a restrained luxury feel rather than a loud experimental UI.
-- The app is fully functional in phase one; only the advanced pattern math/rendering subsystem and signature capture internals are deferred to phase two.
-- SVG is the primary card/pattern renderer; canvas is used only for signature input.
-- Because auth and persistence are browser-local in v1, root routing and guards are client-side rather than true server-auth redirects.
-- Payment, cloud storage, print fulfillment, and real background removal remain mocked behind service interfaces designed for future replacement.
+### In Progress
+
+- Keep `PLAN.md` updated as the canonical restart-safe tracker
+- Polish the screen system and shared editor interactions
+- Expand pattern and signature fidelity beyond the current working baseline
+
+### Done
+
+- Created initial Next.js + Chakra UI starter repository
+- Added baseline project plan for the Lanyard Card Design Generator
+- Converted plan direction into a restart-safe tracker structure
+- Stabilized ESLint and verified the app with lint and production build under a Node 24 runtime
+- Added route groups, redirect gate, authenticated app shell, and all requested top-level routes
+- Added persisted Zustand state for auth, profile, cards, wizard state, and print requests
+- Implemented working login, library, wizard, gallery, simple editor, advanced editor, profile, and print request screens
+- Added reusable card preview, SVG pattern rendering baseline, and canvas signature capture baseline
+
+### Blocked
+
+- None currently
+
+## Architecture Decisions
+
+- Use App Router with route groups to keep URL structure stable while separating auth and app layouts.
+- Use Chakra UI for the component system and theme foundation.
+- Use Zustand with `localStorage` persistence for mock app state.
+- Use SVG for card pattern rendering.
+- Use canvas for signature capture.
+- Use a single seeded mock user for the initial implementation.
+- After first saved card creation, the library becomes the default home page.
+- First print is free; every print request after that costs `£50`.
+- Keep the visual direction premium minimal, with a dark advanced editor and refined motion.
+- Keep phase delivery in two major waves:
+  - Wave 1: screens, routing, persistence, and business logic
+  - Wave 2: advanced pattern engine and signature internals
+
+## Routes and Screens
+
+### `/`
+
+- Purpose: bootstrap gate that routes to login, wizard, or library based on persisted state
+- Auth Expectation: public entry, client-side redirect logic
+- Core UI Modules: `RedirectGate`, loading/splash shell
+- State Dependencies: auth state, saved-card count, onboarding status
+
+### `/login`
+
+- Purpose: mock authentication entry point
+- Auth Expectation: public
+- Core UI Modules: `AuthCard`, `MockLoginForm`
+- State Dependencies: auth slice, seeded user bootstrap
+
+### `/library`
+
+- Purpose: returning-user home with saved cards and create-new entry
+- Auth Expectation: authenticated
+- Core UI Modules: `AppShell`, `LibraryGrid`, `CreateNewCardTile`, `CardLibraryItem`, `StatusPill`
+- State Dependencies: auth, cards, print state
+
+### `/wizard`
+
+- Purpose: guided first-time and new-card flow
+- Auth Expectation: authenticated
+- Core UI Modules: `WizardStepper`, `ProfileReviewForm`, `WizardFooterActions`
+- State Dependencies: auth, profile, wizard, cards
+
+### `/gallery`
+
+- Purpose: browse smart card variations derived from current configuration
+- Auth Expectation: authenticated
+- Core UI Modules: `VariationGallery`, `VariationRail`, `VariationCard`, `ZoomToCardPreview`
+- State Dependencies: wizard selection, profile, active pattern settings
+
+### `/editor`
+
+- Purpose: simple editing mode for the selected design
+- Auth Expectation: authenticated
+- Core UI Modules: `CardPreview`, `SimpleEditorPanel`, save actions
+- State Dependencies: active card, profile, signature, pattern settings
+
+### `/editor/advanced`
+
+- Purpose: professional dark editor for deep pattern and preview control
+- Auth Expectation: authenticated, read-only if locked
+- Core UI Modules: `AdvancedEditorLayout`, `PatternControlPanel`, `PreviewToggleBar`, `CardPreview`
+- State Dependencies: active card, lock state, pattern settings, UI panel state
+
+### `/profile`
+
+- Purpose: user profile and portrait defaults management
+- Auth Expectation: authenticated
+- Core UI Modules: `ProfileReviewForm`, `PortraitUploader`, `BackgroundRemovalPanel`
+- State Dependencies: auth, profile
+
+### `/print-request`
+
+- Purpose: select a saved card, review print rules, and confirm submission
+- Auth Expectation: authenticated
+- Core UI Modules: `PrintRequestWizard`, `PricingSummary`, `ConfirmationNotice`
+- State Dependencies: cards, print requests, first-print-used state
+
+## Implementation Checklist
+
+### App Shell and Routing
+
+- [ ] Create route groups for auth and authenticated app screens
+- [ ] Add root bootstrap redirect logic
+- [ ] Add authenticated app shell with navigation and page transitions
+
+### Auth and Bootstrapping
+
+- [ ] Implement seeded mock user login flow
+- [ ] Persist auth state across refreshes
+- [ ] Route first-time users to wizard and returning users to library
+
+### Profile and Portrait Workflow
+
+- [ ] Implement profile review form
+- [ ] Add portrait upload and preview
+- [ ] Add mocked background-removal action and transparent fallback handling
+
+### Library
+
+- [ ] Build library grid with create-new tile first
+- [ ] Show card status badges for editable, submitted, and locked states
+- [ ] Support opening saved cards in editable or read-only mode
+
+### Wizard
+
+- [ ] Build guided stepper shell
+- [ ] Preserve wizard progress in persisted state
+- [ ] Support save flow and jump into advanced mode before save
+
+### Gallery
+
+- [ ] Build horizontally moving smart variation gallery
+- [ ] Add scroll acceleration and zoom-to-selection interaction
+- [ ] Support returning to gallery without losing edits
+
+### Simple Editor
+
+- [ ] Build simple controls for non-pattern and basic pattern adjustments
+- [ ] Keep preview updates instant and shared with advanced mode
+
+### Advanced Editor Shell
+
+- [ ] Build dark editor layout with control sidebar and large live preview
+- [ ] Add panel toggles and read-only locked state behavior
+
+### Pattern Engine
+
+- [ ] Implement reusable SVG pattern renderer
+- [ ] Implement seeded smart variation generator
+- [ ] Add randomize, reset, and animate-wave controls
+
+### Signature Tools
+
+- [ ] Implement canvas signature pad
+- [ ] Add clear, confirm, and re-edit workflow
+- [ ] Persist signature as overlay-ready data
+
+### Print Requests
+
+- [ ] Build print request wizard
+- [ ] Enforce first print free and subsequent `£50` pricing
+- [ ] Lock the selected card after print submission
+
+### Persistence
+
+- [ ] Persist user, profile, cards, wizard state, and print requests via `localStorage`
+- [ ] Add repository wrappers to ease future backend replacement
+
+### Testing
+
+- [ ] Add tests for routing rules and first-time-user logic
+- [ ] Add tests for print pricing and lock behavior
+- [ ] Add tests for persistence and draft continuity
+
+## Data Model
+
+### UserProfile
+
+- `id`
+- `firstName`
+- `lastName`
+- `displayName`
+- `role`
+- `avatarUrl`
+- `avatarTransparentUrl`
+
+### CardDesign
+
+- `id`
+- `userId`
+- `status`
+- `isLocked`
+- `hasBeenPrinted`
+- `primaryColor`
+- `patternType`
+- `patternSettings`
+- `signatureData`
+- `portraitImage`
+- `createdAt`
+- `updatedAt`
+
+### PatternSettings
+
+- `rows`
+- `itemsPerRow`
+- `minOpacity`
+- `maxOpacity`
+- `amplitude`
+- `frequency`
+- `phaseOffset`
+- `rowSpacing`
+- `itemSpacing`
+- `rotation`
+- `scale`
+- `animate`
+- `animationSpeed`
+- `seed`
+
+### PrintRequest
+
+- `id`
+- `userId`
+- `cardId`
+- `price`
+- `isFirstFreePrint`
+- `submittedAt`
+- `status`
+
+### Supporting Types
+
+- `User`
+- `Signature`
+- `GeneratedVariation`
+- `PaymentState`
+- `CardStatus = "draft" | "saved" | "submittedForPrint" | "locked"`
+- `PrintRequestStatus = "draft" | "confirmed" | "submitted"`
+- `WizardStep = "login" | "profile" | "gallery" | "select" | "edit" | "signature" | "save" | "print"`
+
+## Resume Instructions
+
+1. Read `Status Snapshot` first.
+2. Continue the top item in `In Progress`.
+3. If `In Progress` is empty, take the first unchecked item in `Implementation Checklist`.
+4. After each major step:
+   - update `Last Updated`
+   - update `Current Focus`
+   - update `Next Action`
+   - move items between `Backlog`, `In Progress`, `Done`, and `Blocked`
+5. If the session resets, treat this file as the canonical source of current status and next work.

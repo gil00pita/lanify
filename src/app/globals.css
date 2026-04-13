@@ -1,5 +1,11 @@
 :root {
   color-scheme: light;
+  --lanyard-bg: #f5f1e8;
+  --lanyard-panel: rgba(255, 255, 255, 0.75);
+  --lanyard-text: #1b1813;
+  --lanyard-muted: #6a6154;
+  --lanyard-accent: #d3a740;
+  --lanyard-dark: #11100d;
 }
 
 * {
@@ -13,5 +19,23 @@ body {
 }
 
 body {
-  background: #f7f9fc;
+  background:
+    radial-gradient(circle at top left, rgba(211, 167, 64, 0.22), transparent 30%),
+    radial-gradient(circle at top right, rgba(38, 92, 75, 0.12), transparent 26%),
+    linear-gradient(180deg, #f9f4ea 0%, #efe7d8 100%);
+  color: var(--lanyard-text);
+  font-family:
+    "Inter",
+    "Segoe UI",
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#__next,
+body > div:first-child {
+  min-height: 100vh;
 }
