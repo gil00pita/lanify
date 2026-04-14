@@ -24,6 +24,7 @@ interface AppStore {
     editorMode: 'simple' | 'advanced'
   }
   wizard: WizardState
+  clearSelectedVariation: () => void
   createNewDraft: () => void
   loadCardIntoDraft: (cardId: string) => void
   login: (email: string) => void
@@ -59,6 +60,14 @@ export const useAppStore = create<AppStore>()(
       wizard: {
         currentStep: 'login',
         selectedVariationId: null,
+      },
+      clearSelectedVariation: () => {
+        set((state) => ({
+          wizard: {
+            ...state.wizard,
+            selectedVariationId: null,
+          },
+        }))
       },
       createNewDraft: () => {
         const state = get()

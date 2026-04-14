@@ -3,6 +3,7 @@
 import { Box, Image, Text, VStack } from '@chakra-ui/react'
 
 import { PatternRenderer } from '@/components/app/pattern-renderer'
+import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign } from '@/types/domain'
 
 function PortraitFallback() {
@@ -29,6 +30,7 @@ export function CardPreview(props: {
 
   return (
     <Box
+      aspectRatio={PRINT_CARD_ASPECT_RATIO}
       bg="rgba(17, 16, 13, 0.98)"
       border="1px solid rgba(255,255,255,0.08)"
       borderRadius="28px"
@@ -38,7 +40,6 @@ export function CardPreview(props: {
           : '0 18px 40px rgba(17, 16, 13, 0.18)'
       }
       color="white"
-      h="360px"
       overflow="hidden"
       position="relative"
       w="240px"

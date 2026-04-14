@@ -568,13 +568,14 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
           <Box
             as="ul"
             alignItems="center"
-            aria-hidden={copyIndex > 0}
+            // aria-hidden={copyIndex > 0}
             display="flex"
             flexDirection={isVertical ? 'column' : 'row'}
             key={`copy-${copyIndex}`}
             listStyle="none"
             m="0"
             p="0"
+            pointerEvents={copyIndex > 0 ? 'none' : 'auto'}
             ref={copyIndex === 0 ? seqRef : undefined}
             role="list"
           >

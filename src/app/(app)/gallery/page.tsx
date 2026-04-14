@@ -44,7 +44,7 @@ export default function GalleryPage() {
             <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"></path>
           </Icon>
           <Text fontSize="sm" color="var(--lanyard-muted)">
-            Select a variation to customize.
+            Select the variation you want to customize.
           </Text>
         </HStack>
       </HStack>
