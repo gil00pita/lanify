@@ -30,6 +30,7 @@ export interface CardRowLoopProps {
   logoHeight?: number
   gap?: number
   edgePadding?: number
+  freeze?: boolean
   pauseOnHover?: boolean
   hoverSpeed?: number
   fadeOut?: boolean
@@ -38,6 +39,7 @@ export interface CardRowLoopProps {
   renderItem?: (item: CardItem, key: React.Key) => React.ReactNode
   ariaLabel?: string
   className?: string
+  onMotionReady?: () => void
   style?: React.CSSProperties
 }
 
@@ -192,7 +194,8 @@ const useAnimationLoop = (
   isHovered: boolean,
   hoverSpeed: number | undefined,
   isVertical: boolean,
-  shouldAnimate: boolean
+  shouldAnimate: boolean,
+  freeze: boolean
 ) => {
   const rafRef = useRef<number | null>(null)
   const lastTimestampRef = useRef<number | null>(null)
@@ -211,6 +214,17 @@ const useAnimationLoop = (
         ? `translate3d(0, ${-offsetRef.current}px, 0)`
         : `translate3d(${-offsetRef.current}px, 0, 0)`
       track.style.transform = transformValue
+    }
+
+    if (freeze) {
+      velocityRef.current = 0
+      return () => {
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current)
+          rafRef.current = null
+        }
+        lastTimestampRef.current = null
+      }
     }
 
     if (!shouldAnimate || seqSize <= 0) {
@@ -269,7 +283,7 @@ const useAnimationLoop = (
       }
       lastTimestampRef.current = null
     }
-  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, shouldAnimate])
+  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, shouldAnimate, freeze])
 }
 
 export const CardRowLoop = React.memo<CardRowLoopProps>(
@@ -281,6 +295,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
     logoHeight = 28,
     gap = 32,
     edgePadding = 0,
+    freeze = false,
     pauseOnHover,
     hoverSpeed,
     fadeOut = false,
@@ -289,6 +304,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
     renderItem,
     ariaLabel = 'Card items',
     className,
+    onMotionReady,
     style,
   }) => {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -299,6 +315,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
     const [seqHeight, setSeqHeight] = useState<number>(0)
     const [copyCount, setCopyCount] = useState<number>(ANIMATION_CONFIG.MIN_COPIES)
     const [isHovered, setIsHovered] = useState<boolean>(false)
+    const hasReportedMotionReadyRef = useRef(false)
 
     const effectiveHoverSpeed = useMemo(() => {
       if (hoverSpeed !== undefined) return hoverSpeed
@@ -368,8 +385,25 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
       isHovered,
       effectiveHoverSpeed,
       isVertical,
-      shouldAnimate
+      shouldAnimate,
+      freeze
     )
+
+    useEffect(() => {
+      const sequenceSize = isVertical ? seqHeight : seqWidth
+
+      if (freeze) {
+        hasReportedMotionReadyRef.current = false
+        return
+      }
+
+      if (!shouldAnimate || sequenceSize <= 0 || hasReportedMotionReadyRef.current) {
+        return
+      }
+
+      hasReportedMotionReadyRef.current = true
+      onMotionReady?.()
+    }, [freeze, isVertical, onMotionReady, seqHeight, seqWidth, shouldAnimate])
 
     const fadeStyles = useMemo(() => {
       if (!fadeOut) return undefined
