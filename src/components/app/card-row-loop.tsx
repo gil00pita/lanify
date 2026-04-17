@@ -31,10 +31,12 @@ export interface CardRowLoopProps {
   gap?: number
   edgePadding?: number
   freeze?: boolean
+  freezeDurationMs?: number
   pauseOnHover?: boolean
   hoverSpeed?: number
   fadeOut?: boolean
   fadeOutColor?: string
+  preserveHoverSpacing?: boolean
   scaleOnHover?: boolean
   renderItem?: (item: CardItem, key: React.Key) => React.ReactNode
   ariaLabel?: string
@@ -45,6 +47,7 @@ export interface CardRowLoopProps {
 
 const ANIMATION_CONFIG = {
   SMOOTH_TAU: 0.25,
+  FREEZE_EASING_DIVISOR: 4.6,
   MIN_COPIES: 2,
   COPY_HEADROOM: 2,
   VELOCITY_EPSILON: 0.5,
@@ -195,7 +198,8 @@ const useAnimationLoop = (
   hoverSpeed: number | undefined,
   isVertical: boolean,
   shouldAnimate: boolean,
-  freeze: boolean
+  freeze: boolean,
+  freezeDurationMs: number
 ) => {
   const rafRef = useRef<number | null>(null)
   const lastTimestampRef = useRef<number | null>(null)
@@ -216,17 +220,6 @@ const useAnimationLoop = (
       track.style.transform = transformValue
     }
 
-    if (freeze) {
-      velocityRef.current = 0
-      return () => {
-        if (rafRef.current !== null) {
-          cancelAnimationFrame(rafRef.current)
-          rafRef.current = null
-        }
-        lastTimestampRef.current = null
-      }
-    }
-
     if (!shouldAnimate || seqSize <= 0) {
       return () => {
         if (rafRef.current !== null) {
@@ -245,9 +238,12 @@ const useAnimationLoop = (
       const deltaTime = Math.max(0, timestamp - lastTimestampRef.current) / 1000
       lastTimestampRef.current = timestamp
 
-      const target = isHovered && hoverSpeed !== undefined ? hoverSpeed : targetVelocity
-
-      const easingFactor = 1 - Math.exp(-deltaTime / ANIMATION_CONFIG.SMOOTH_TAU)
+      const target = freeze ? 0 : isHovered && hoverSpeed !== undefined ? hoverSpeed : targetVelocity
+      const smoothTau =
+        freeze && freezeDurationMs > 0
+          ? freezeDurationMs / 1000 / ANIMATION_CONFIG.FREEZE_EASING_DIVISOR
+          : ANIMATION_CONFIG.SMOOTH_TAU
+      const easingFactor = 1 - Math.exp(-deltaTime / smoothTau)
       velocityRef.current += (target - velocityRef.current) * easingFactor
 
       if (seqSize > 0) {
@@ -283,7 +279,7 @@ const useAnimationLoop = (
       }
       lastTimestampRef.current = null
     }
-  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, shouldAnimate, freeze])
+  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, shouldAnimate, freeze, freezeDurationMs])
 }
 
 export const CardRowLoop = React.memo<CardRowLoopProps>(
@@ -296,10 +292,12 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
     gap = 32,
     edgePadding = 0,
     freeze = false,
+    freezeDurationMs = 0,
     pauseOnHover,
     hoverSpeed,
     fadeOut = false,
     fadeOutColor,
+    preserveHoverSpacing = false,
     scaleOnHover = false,
     renderItem,
     ariaLabel = 'Card items',
@@ -386,7 +384,8 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
       effectiveHoverSpeed,
       isVertical,
       shouldAnimate,
-      freeze
+      freeze,
+      freezeDurationMs
     )
 
     useEffect(() => {
@@ -602,14 +601,14 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
           <Box
             as="ul"
             alignItems="center"
-            // aria-hidden={copyIndex > 0}
+            aria-hidden={copyIndex > 0}
             display="flex"
             flexDirection={isVertical ? 'column' : 'row'}
             key={`copy-${copyIndex}`}
             listStyle="none"
             m="0"
             p="0"
-            pointerEvents={copyIndex > 0 ? 'none' : 'auto'}
+            pointerEvents="auto"
             ref={copyIndex === 0 ? seqRef : undefined}
             role="list"
           >
@@ -632,6 +631,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
     )
 
     const viewportPadding = `${edgePadding}px`
+    const shouldReserveHoverSpacing = scaleOnHover || preserveHoverSpacing
 
     return (
       <Box
@@ -643,9 +643,9 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
         overflowX="clip"
         overflowY="visible"
         px={isVertical ? 0 : viewportPadding}
-        pb={scaleOnHover ? `calc(${logoHeight}px * 0.1 + 40px)` : 0}
+        pb={shouldReserveHoverSpacing ? `calc(${logoHeight}px * 0.1 + 40px)` : 0}
         position="relative"
-        pt={scaleOnHover ? `calc(${logoHeight}px * 0.1 + 10px)` : 0}
+        pt={shouldReserveHoverSpacing ? `calc(${logoHeight}px * 0.1 + 10px)` : 0}
         role="region"
         style={containerStyle}
         {...fadeStyles}

@@ -29,7 +29,7 @@ export default function EditorPage() {
     >
       <HStack gap="3" position="absolute" top="24px" left="24px" zIndex={'docked'}>
         <Button
-          onClick={() => router.push('/wizard')}
+          onClick={() => router.push('/gallery')}
           variant="outline"
           rounded={'full'}
           {...frostedGlass}

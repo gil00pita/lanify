@@ -1,10 +1,5 @@
 import { createDraftCard } from '@/lib/mock-data'
-import type {
-  CardDesign,
-  GeneratedVariation,
-  PatternSettings,
-  UserProfile,
-} from '@/types/domain'
+import type { CardDesign, GeneratedVariation, PatternSettings, UserProfile } from '@/types/domain'
 
 const variationDeltas = [
   { amplitude: -0.15, frequency: -0.1, itemsPerRow: -2, rows: -1, seed: 3 },
@@ -21,19 +16,70 @@ const variationDeltas = [
   { amplitude: -0.05, frequency: -0.28, scale: 0.92, seed: 59 },
 ]
 
+export const colors = {
+  brandPurple: '#5236AB',
+  brandRed: '#E31937',
+  commonBlack: '#000000',
+  commonWhite: '#FFFFFF',
+  dataShadesGreen: '#128354',
+  dataShadesRed: '#B00020',
+  dataShadesYellow: '#F1A425',
+  gray1: '#EEEEEE',
+  gray2: '#CCCCCC',
+  gray3: '#999999',
+  gray4: '#777777',
+  gray5: '#555555',
+  gray6: '#333333',
+  gray7: '#000000',
+  magenta1: '#CB7CA3',
+  magenta2: '#A82465',
+  magenta3: '#7E1B4C',
+  purple1: '#E6E3F3',
+  purple2: '#CBC3E6',
+  purple3: '#BFB5F9',
+  purple4: '#9E83F5',
+  purple5: '#6E3FED',
+  purple6: '#5236AB',
+  purple7: '#200A58',
+  red1: '#FFCDD2',
+  red2: '#FF978A',
+  red3: '#FF7362',
+  red4: '#FF6A00',
+  red5: '#E31937',
+  red6: '#991F3D',
+  red7: '#650A21',
+}
+
 const variationColors = [
-  '#f4ebd8',
-  '#56ef8a',
-  '#2698cc',
-  '#1f1d1d',
-  '#df4516',
-  '#2d9ad0',
-  '#acf1f0',
-  '#2f4fe9',
-  '#8e018a',
-  '#ec6f29',
-  '#04710d',
-  '#59503b',
+  colors.brandPurple,
+  colors.purple3,
+  colors.dataShadesGreen,
+  colors.magenta3,
+  colors.purple1,
+  colors.red1,
+  colors.purple7,
+  colors.red5,
+  colors.gray3,
+  colors.brandRed,
+  colors.gray7,
+  colors.magenta1,
+  colors.red2,
+  colors.dataShadesYellow,
+  colors.purple6,
+  colors.gray4,
+  colors.red3,
+  colors.purple2,
+  colors.gray2,
+  colors.magenta2,
+  colors.purple4,
+  colors.gray5,
+  colors.dataShadesRed,
+  colors.purple5,
+  colors.gray1,
+  colors.red4,
+  colors.gray6,
+  colors.red6,
+  colors.red7,
 ]
 
 function clamp(value: number, min: number, max: number) {
@@ -61,18 +107,21 @@ function mutateSettings(base: PatternSettings, delta: Partial<PatternSettings>) 
 
 export function generateSmartVariations(
   base: CardDesign,
-  profile: UserProfile,
+  profile: UserProfile
 ): GeneratedVariation[] {
   return variationDeltas.map((delta, index) => {
-    const draft = createDraftCard(base.userId, profile)
+    const seededFromProfile = createDraftCard(base.userId, profile)
 
     return {
       design: {
-        ...draft,
+        ...seededFromProfile,
         ...base,
         id: `${base.id}_variation_${index + 1}`,
         patternSettings: mutateSettings(base.patternSettings, delta),
+        portraitImage: seededFromProfile.portraitImage,
         primaryColor: variationColors[index % variationColors.length],
+        subtitle: profile.role,
+        title: profile.displayName,
       },
       id: `${base.id}_variation_${index + 1}`,
       label: `Variation ${index + 1}`,
