@@ -1,16 +1,19 @@
 'use client'
 
-import { ChangeEvent } from 'react'
-import { useRef } from 'react'
+import { ChangeEvent, useRef, useState } from 'react'
 
 import { Box, Button, HStack, Image, Input, Stack, Text } from '@chakra-ui/react'
 
+import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-modal'
 import { useAppStore } from '@/store/app-store'
 
 export function ProfileReviewForm() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const profile = useAppStore((state) => state.profile)
   const updateProfile = useAppStore((state) => state.updateProfile)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const hasProfilePicture = Boolean(profile.avatarTransparentUrl ?? profile.avatarUrl)
+  const previewImage = profile.avatarTransparentUrl ?? profile.avatarUrl
 
   function updateField<K extends keyof typeof profile>(key: K, value: (typeof profile)[K]) {
     updateProfile((current) => ({
@@ -40,14 +43,14 @@ export function ProfileReviewForm() {
 
   return (
     <HStack align="start" flexDirection={{ base: 'column', lg: 'row' }} gap="8">
-      <Stack flex="1" gap="5">
+      <Stack flex="1" gap="5" display={'none'}>
         <Text color="rgba(27,24,19,0.72)" fontSize="sm" maxW="560px">
           Please confirm your profile picture, name, and role before generating your first set of
           premium card directions.
         </Text>
 
         <Stack flex="1" gap="4">
-          <Box>
+          <Box display={'none'}>
             <Text fontSize="sm" fontWeight="600" mb="2">
               First Name *
             </Text>
@@ -61,7 +64,7 @@ export function ProfileReviewForm() {
               value={profile.firstName}
             />
           </Box>
-          <Box>
+          <Box display={'none'}>
             <Text fontSize="sm" fontWeight="600" mb="2">
               Surname *
             </Text>
@@ -105,8 +108,14 @@ export function ProfileReviewForm() {
           shadow="0 18px 40px rgba(17,16,13,0.10)"
           w="172px"
         >
-          {profile.avatarUrl ? (
-            <Image alt={profile.displayName} h="172px" objectFit="cover" src={profile.avatarUrl} w="172px" />
+          {previewImage ? (
+            <Image
+              alt={profile.displayName}
+              h="172px"
+              objectFit="cover"
+              src={previewImage}
+              w="172px"
+            />
           ) : (
             <Box
               alignItems="center"
@@ -149,19 +158,32 @@ export function ProfileReviewForm() {
             border="1px solid rgba(27,24,19,0.12)"
             borderRadius="16px"
             color="var(--lanyard-text)"
+            disabled={!hasProfilePicture}
             fontWeight="700"
-            onClick={() =>
-              updateProfile((current) => ({
-                ...current,
-                avatarTransparentUrl: current.avatarUrl,
-              }))
-            }
+            onClick={() => setIsEditorOpen(true)}
             variant="surface"
           >
             Edit Current Picture
           </Button>
         </Stack>
       </Stack>
+
+      {previewImage ? (
+        <ProfileImageEditorModal
+          imageSrc={previewImage}
+          isOpen={isEditorOpen}
+          onClose={() => setIsEditorOpen(false)}
+          onSave={(editedImage, source) =>
+            updateProfile((current) => ({
+              ...current,
+              avatarTransparentUrl: source === 'transparent' ? editedImage : null,
+              avatarUrl: source === 'original' ? editedImage : current.avatarUrl,
+            }))
+          }
+          originalImageSrc={profile.avatarUrl}
+          transparentImageSrc={profile.avatarTransparentUrl}
+        />
+      ) : null}
     </HStack>
   )
 }

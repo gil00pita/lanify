@@ -9,9 +9,10 @@ import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign, PatternSettings } from '@/types/domain'
 
 const MotionBox = motion.create(Box)
+const NAME_MAX_WIDTH = 154
 const MAX_NAME_FONT_SIZE = 36
 const MIN_NAME_FONT_SIZE = 12
-const MAX_ROLE_FONT_SIZE = 20
+const MAX_ROLE_FONT_SIZE = 18
 const MIN_ROLE_FONT_SIZE = 10
 
 type AppCardState = 'default' | 'selected' | 'customizing'
@@ -105,9 +106,23 @@ function SelectorPattern(props: { color: string; settings: PatternSettings }) {
 
 function AvatarSilhouette() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 240 240" width="100%">
-      <circle cx="120" cy="76" fill="rgba(220, 212, 243, 0.96)" r="48" />
-      <path d="M42 206c8-40 36-64 78-64s70 24 78 64" fill="rgba(220, 212, 243, 0.96)" />
+    <svg
+      width="240"
+      height="240"
+      viewBox="0 0 240 240"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M120 124C146.51 124 168 102.51 168 76C168 49.4903 146.51 28 120 28C93.4903 28 72 49.4903 72 76C72 102.51 93.4903 124 120 124Z"
+        fill="currentColor"
+        fill-opacity="0.96"
+      />
+      <path
+        d="M42 240C50 178.75 42 142 120 142C198 142 190 178.75 198 240"
+        fill="currentColor"
+        fill-opacity="0.96"
+      />
     </svg>
   )
 }
@@ -141,7 +156,7 @@ function AppCardFront(props: {
     const fitName = () => {
       const container = nameContainerRef.current
       const firstNameNode = firstLineRef.current
-      const availableWidth = container?.clientWidth ?? 0
+      const availableWidth = Math.min(container?.clientWidth ?? 0, NAME_MAX_WIDTH)
 
       if (!container || !firstNameNode) {
         return
@@ -279,17 +294,17 @@ function AppCardFront(props: {
         color="fb"
         left="0"
         position="absolute"
-        pt={{ base: '5', md: '6' }}
-        px={{ base: '4', md: '5' }}
-        pb={{ base: '4', md: '5' }}
+        pt={3}
+        px={4}
+        pb={5}
         right="0"
         top={'56%'}
       >
         <Stack gap={{ base: '2', md: '3' }} h="full" justify="space-between">
-          <Stack gap="0" ref={nameContainerRef} w="full">
+          <Stack gap="1" maxW={`${NAME_MAX_WIDTH}px`} ref={nameContainerRef} w="full">
             <Text
               fontSize={`${nameFontSize}px`}
-              fontWeight="300"
+              fontWeight="600"
               letterSpacing="-0.05em"
               lineHeight="0.92"
               overflow={shouldEllipsizeName ? 'hidden' : 'visible'}
@@ -297,13 +312,14 @@ function AppCardFront(props: {
               textOverflow={shouldEllipsizeName ? 'ellipsis' : 'clip'}
               w="full"
               whiteSpace="nowrap"
+              maxW={'154px'}
             >
               {firstLine}
             </Text>
             {secondLine ? (
               <Text
                 fontSize={`${surnameFontSize}px`}
-                fontWeight="300"
+                fontWeight="600"
                 letterSpacing="-0.05em"
                 lineHeight="0.92"
                 overflow={shouldEllipsizeSurname ? 'hidden' : 'visible'}
@@ -318,7 +334,7 @@ function AppCardFront(props: {
           </Stack>
           <Box ref={roleContainerRef} w="full">
             <Text
-              color="rgba(53,53,55,0.8)"
+              color="fg"
               fontSize={`${roleFontSize}px`}
               lineHeight="1.05"
               overflow={shouldEllipsizeRole ? 'hidden' : 'visible'}

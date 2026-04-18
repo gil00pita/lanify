@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-import { Box, Button, Grid, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, Grid, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
@@ -95,9 +95,9 @@ export default function WizardPage() {
   const createNewDraft = useAppStore((state) => state.createNewDraft)
   const profile = useAppStore((state) => state.profile)
   const activeDraft = useAppStore((state) => state.activeDraft)
-  const wizard = useAppStore((state) => state.wizard)
   const setWizardStep = useAppStore((state) => state.setWizardStep)
   const updateProfile = useAppStore((state) => state.updateProfile)
+  const hasProfilePicture = Boolean(profile.avatarTransparentUrl ?? profile.avatarUrl)
 
   useEffect(() => {
     if (!activeDraft) {
@@ -137,28 +137,33 @@ export default function WizardPage() {
           {...frostedGlass}
           border="1px solid rgba(255,255,255,0.82)"
           borderRadius="34px"
-          maxW="980px"
+          // maxW="980px"
           p={{ base: '6', md: '10' }}
-          w="full"
+          // w="full"
         >
-          <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="500" lineHeight="0.95">
-            Welcome
+          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="500" lineHeight="0.95">
+            Welcome {profile.displayName}
           </Text>
-          <Text fontSize={{ base: 'lg', md: '2xl' }} fontWeight="500" mt="1">
-            Please confirm your profile picture, name & role
+
+          <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="400" mt="1">
+            {profile.role}
+          </Text>
+          <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="400" mt="1" color={'fg'}>
+            Please confirm your profile picture.
           </Text>
 
           <ProfileReviewForm />
 
-          <HStack justify="space-between" mt="2">
-            <Text color="rgba(27,24,19,0.62)" fontSize="sm">
-              Signed in as {profile.displayName}
+          <VStack justify="space-between" mt="4">
+            <Text color="fg.muted" fontSize="sm">
+              {hasProfilePicture ? 'Profile picture ready.' : 'Upload a profile picture to Start.'}
             </Text>
             <Button
               bg="#0f4f87"
               borderRadius="16px"
               color="white"
-              minW={{ base: '160px', md: '260px' }}
+              disabled={!hasProfilePicture}
+              w={'full'}
               onClick={() => {
                 updateProfile((current) => ({
                   ...current,
@@ -172,7 +177,7 @@ export default function WizardPage() {
             >
               Start
             </Button>
-          </HStack>
+          </VStack>
         </Stack>
       </Box>
     </Box>
