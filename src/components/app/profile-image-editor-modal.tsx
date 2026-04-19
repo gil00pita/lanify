@@ -1,24 +1,32 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { CSSProperties, forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import {
   Alert,
   Box,
   Button,
   HStack,
-  Image,
   Input,
   NativeSelect,
-  RadioCard,
   SegmentGroup,
   Stack,
   Switch,
   Text,
 } from '@chakra-ui/react'
+import {
+  Cropper,
+  CropperImage,
+  CropperRef,
+  CropperState,
+  CropperTransitions,
+  ImageRestriction,
+  RectangleStencil,
+  getBackgroundStyle,
+  mergeRefs,
+} from 'react-advanced-cropper'
 
 type EditorTool = 'background' | 'crop' | 'filter' | 'rotate'
-type EditorSource = 'original' | 'transparent'
 type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
 type RembgModel = 'birefnet-portrait' | 'u2net_human_seg' | 'u2net'
 
@@ -26,8 +34,7 @@ type ProfileImageEditorModalProps = {
   imageSrc: string
   isOpen: boolean
   onClose: () => void
-  onTransparentImageReady: (imageSrc: string) => void
-  onSave: (imageSrc: string, source: EditorSource) => void
+  onSave: (imageSrc: string) => void
   originalImageSrc?: string | null
   transparentImageSrc?: string | null
 }
@@ -45,13 +52,10 @@ const defaultState = {
   flipHorizontal: false,
   grayscale: 0,
   maskCleanup: true,
-  offsetX: 0,
-  offsetY: 0,
   rembgEdgePreset: 'balanced' as RembgEdgePreset,
   rembgModel: 'birefnet-portrait' as RembgModel,
   rotation: 0,
   saturate: 100,
-  zoom: 1,
 }
 
 const rembgModelOptions: Array<{ label: string; value: RembgModel }> = [
@@ -66,6 +70,127 @@ const edgePresetOptions: Array<{ label: string; value: RembgEdgePreset }> = [
   { label: 'Balanced', value: 'balanced' },
   { label: 'Soft', value: 'soft' },
 ]
+
+type AdjustmentProps = {
+  brightness?: number
+  contrast?: number
+  grayscale?: number
+  saturate?: number
+}
+
+type AdjustableImageProps = AdjustmentProps & {
+  className?: string
+  crossOrigin?: 'anonymous' | 'use-credentials' | boolean
+  src?: string
+  style?: CSSProperties
+}
+
+const AdjustableImage = forwardRef<HTMLCanvasElement, AdjustableImageProps>(function AdjustableImage(
+  props,
+  ref
+) {
+  const {
+    brightness = 100,
+    className,
+    contrast = 100,
+    crossOrigin,
+    grayscale = 0,
+    saturate = 100,
+    src,
+    style,
+  } = props
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  function drawImage() {
+    const image = imageRef.current
+    const canvas = canvasRef.current
+
+    if (!canvas || !image || !image.complete) {
+      return
+    }
+
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      return
+    }
+
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) grayscale(${grayscale}%)`
+    context.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight)
+  }
+
+  useLayoutEffect(() => {
+    drawImage()
+  }, [brightness, contrast, grayscale, saturate, src])
+
+  return (
+    <>
+      <canvas
+        className={className}
+        key={`${src ?? 'empty'}-canvas`}
+        ref={mergeRefs([ref, canvasRef])}
+        style={style}
+      />
+      {src ? (
+        <img
+          alt=""
+          className="lanify-adjustable-image-source"
+          crossOrigin={crossOrigin === true ? 'anonymous' : crossOrigin || undefined}
+          key={`${src}-image`}
+          onLoad={drawImage}
+          ref={imageRef}
+          src={src}
+        />
+      ) : null}
+    </>
+  )
+})
+
+type AdjustableCropperBackgroundProps = AdjustmentProps & {
+  className?: string
+  cropper: {
+    getImage: () => CropperImage | null
+    getState: () => CropperState | null
+    getTransitions: () => CropperTransitions | null
+  }
+  crossOrigin?: 'anonymous' | 'use-credentials' | boolean
+}
+
+const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, AdjustableCropperBackgroundProps>(
+  function AdjustableCropperBackground(props, ref) {
+    const {
+      brightness = 100,
+      className,
+      contrast = 100,
+      cropper,
+      crossOrigin,
+      grayscale = 0,
+      saturate = 100,
+    } = props
+    const image = cropper.getImage()
+    const state = cropper.getState()
+    const transitions = cropper.getTransitions()
+    const style = image && state ? getBackgroundStyle(image, state, transitions) : {}
+
+    return (
+      <AdjustableImage
+        brightness={brightness}
+        className={className}
+        contrast={contrast}
+        crossOrigin={crossOrigin}
+        grayscale={grayscale}
+        ref={ref}
+        saturate={saturate}
+        src={image?.src}
+        style={style}
+      />
+    )
+  }
+)
 
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -131,75 +256,10 @@ async function removeBackground(
   return blobToDataUrl(blob)
 }
 
-async function renderEditedImage(params: {
-  brightness: number
-  contrast: number
-  flipHorizontal: boolean
-  grayscale: number
-  imageSrc: string
-  offsetX: number
-  offsetY: number
-  rotation: number
-  saturate: number
-  zoom: number
-}) {
-  const {
-    brightness,
-    contrast,
-    flipHorizontal,
-    grayscale,
-    imageSrc,
-    offsetX,
-    offsetY,
-    rotation,
-    saturate,
-    zoom,
-  } = params
-  const image = new window.Image()
-  image.crossOrigin = 'anonymous'
-  image.src = imageSrc
-  await image.decode()
-
-  const outputSize = 1024
-  const canvas = document.createElement('canvas')
-  canvas.width = outputSize
-  canvas.height = outputSize
-  const context = canvas.getContext('2d')
-
-  if (!context) {
-    throw new Error('Could not create canvas context')
-  }
-
-  const baseScale = Math.max(outputSize / image.naturalWidth, outputSize / image.naturalHeight)
-  const renderWidth = image.naturalWidth * baseScale
-  const renderHeight = image.naturalHeight * baseScale
-
-  context.clearRect(0, 0, outputSize, outputSize)
-  context.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) grayscale(${grayscale}%)`
-  context.translate(
-    outputSize / 2 + (outputSize * offsetX) / 100,
-    outputSize / 2 + (outputSize * offsetY) / 100
-  )
-  context.rotate((rotation * Math.PI) / 180)
-  context.scale(flipHorizontal ? -zoom : zoom, zoom)
-  context.drawImage(image, -renderWidth / 2, -renderHeight / 2, renderWidth, renderHeight)
-
-  return canvas.toDataURL('image/png')
-}
-
 export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
-  const {
-    imageSrc,
-    isOpen,
-    onClose,
-    onSave,
-    onTransparentImageReady,
-    originalImageSrc,
-    transparentImageSrc,
-  } = props
+  const { imageSrc, isOpen, onClose, onSave, originalImageSrc, transparentImageSrc } = props
   const [activeTool, setActiveTool] = useState<EditorTool>('background')
   const [backgroundError, setBackgroundError] = useState<string | null>(null)
-  const [backgroundSuccess, setBackgroundSuccess] = useState<string | null>(null)
   const [brightness, setBrightness] = useState(defaultState.brightness)
   const [contrast, setContrast] = useState(defaultState.contrast)
   const [flipHorizontal, setFlipHorizontal] = useState(defaultState.flipHorizontal)
@@ -207,15 +267,17 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const [isRemovingBackground, setIsRemovingBackground] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [maskCleanup, setMaskCleanup] = useState(defaultState.maskCleanup)
-  const [offsetX, setOffsetX] = useState(defaultState.offsetX)
-  const [offsetY, setOffsetY] = useState(defaultState.offsetY)
   const [rembgEdgePreset, setRembgEdgePreset] = useState(defaultState.rembgEdgePreset)
   const [rembgModel, setRembgModel] = useState(defaultState.rembgModel)
   const [rotation, setRotation] = useState(defaultState.rotation)
   const [saturate, setSaturate] = useState(defaultState.saturate)
-  const [source, setSource] = useState<EditorSource>('original')
-  const [zoom, setZoom] = useState(defaultState.zoom)
+  const [processedTransparentSrc, setProcessedTransparentSrc] = useState<string | null>(
+    transparentImageSrc ?? null
+  )
   const wasOpenRef = useRef(false)
+  const removeBackgroundRequestIdRef = useRef(0)
+  const cropperRef = useRef<CropperRef>(null)
+  const processingSourceImage = originalImageSrc ?? imageSrc
 
   useEffect(() => {
     if (!isOpen) {
@@ -230,32 +292,80 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     wasOpenRef.current = true
     setActiveTool('background')
     setBackgroundError(null)
-    setBackgroundSuccess(null)
     setBrightness(defaultState.brightness)
     setContrast(defaultState.contrast)
     setFlipHorizontal(defaultState.flipHorizontal)
     setGrayscale(defaultState.grayscale)
     setMaskCleanup(defaultState.maskCleanup)
-    setOffsetX(defaultState.offsetX)
-    setOffsetY(defaultState.offsetY)
     setRembgEdgePreset(defaultState.rembgEdgePreset)
     setRembgModel(defaultState.rembgModel)
     setRotation(defaultState.rotation)
     setSaturate(defaultState.saturate)
-    setZoom(defaultState.zoom)
-    setSource(transparentImageSrc ? 'transparent' : 'original')
+    setProcessedTransparentSrc(transparentImageSrc ?? null)
   }, [isOpen, transparentImageSrc])
 
-  const currentImageSrc = useMemo(() => {
-    if (source === 'transparent' && transparentImageSrc) {
-      return transparentImageSrc
+  useEffect(() => {
+    if (!isOpen || !processingSourceImage) {
+      return
     }
 
-    return originalImageSrc ?? imageSrc
-  }, [imageSrc, originalImageSrc, source, transparentImageSrc])
+    const requestId = removeBackgroundRequestIdRef.current + 1
+    removeBackgroundRequestIdRef.current = requestId
+    setIsRemovingBackground(true)
+    setBackgroundError(null)
 
-  const previewFilter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) grayscale(${grayscale}%)`
-  const previewTransform = `translate(${offsetX}%, ${offsetY}%) rotate(${rotation}deg) scale(${flipHorizontal ? -zoom : zoom}, ${zoom})`
+    void removeBackground(processingSourceImage, {
+      edgePreset: rembgEdgePreset,
+      model: rembgModel,
+      postProcessMask: maskCleanup,
+    })
+      .then((transparentImage) => {
+        if (removeBackgroundRequestIdRef.current !== requestId) {
+          return
+        }
+
+        setProcessedTransparentSrc(transparentImage)
+      })
+      .catch((error: unknown) => {
+        if (removeBackgroundRequestIdRef.current !== requestId) {
+          return
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Background removal failed. Please try again.'
+        setBackgroundError(message)
+      })
+      .finally(() => {
+        if (removeBackgroundRequestIdRef.current !== requestId) {
+          return
+        }
+
+        setIsRemovingBackground(false)
+      })
+  }, [isOpen, maskCleanup, processingSourceImage, rembgEdgePreset, rembgModel])
+
+  const transparentPreviewSrc = processedTransparentSrc ?? transparentImageSrc
+  const currentImageSrc = transparentPreviewSrc ?? processingSourceImage
+  const cropperEnabled = activeTool === 'crop'
+
+  function applyRotation(nextRotation: number) {
+    cropperRef.current?.rotateImage(nextRotation, {
+      immediately: true,
+      normalize: true,
+      transitions: false,
+    })
+    setRotation(nextRotation)
+  }
+
+  function zoomImage(factor: number) {
+    cropperRef.current?.zoomImage(factor, {
+      immediately: true,
+      normalize: true,
+      transitions: false,
+    })
+  }
 
   if (!isOpen) {
     return null
@@ -334,19 +444,32 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               position="relative"
               w="full"
             >
-              <Image
-                alt="Current profile picture"
-                h="100%"
-                inset="0"
-                objectFit="cover"
-                position="absolute"
-                src={currentImageSrc}
-                style={{
-                  filter: previewFilter,
-                  transform: previewTransform,
-                  transformOrigin: 'center center',
+              <Cropper
+                backgroundComponent={AdjustableCropperBackground}
+                backgroundProps={{
+                  brightness,
+                  contrast,
+                  grayscale,
+                  saturate,
                 }}
-                w="100%"
+                backgroundWrapperProps={{
+                  moveImage: cropperEnabled,
+                  scaleImage: cropperEnabled,
+                }}
+                ref={cropperRef}
+                className="lanify-profile-cropper"
+                imageRestriction={ImageRestriction.stencil}
+                src={currentImageSrc}
+                stencilComponent={RectangleStencil}
+                stencilProps={{
+                  aspectRatio: 1,
+                  handlers: cropperEnabled,
+                  lines: cropperEnabled,
+                  movable: cropperEnabled,
+                  overlayClassName: 'lanify-profile-cropper-overlay',
+                  resizable: cropperEnabled,
+                }}
+                transitions={false}
               />
             </Box>
           </Stack>
@@ -411,8 +534,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                       />
                     </SegmentGroup.Root>
                     <Text color="fg.muted" fontSize="xs">
-                      `Sharp` keeps harder edges. `Soft` uses stronger alpha matting for hair and
-                      natural portraits.
+                      `Off` keeps the model's raw mask. `Sharp` cuts tighter edges. `Soft` keeps
+                      more feathering around hair and natural contours.
                     </Text>
                   </Stack>
 
@@ -426,114 +549,33 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     <Switch.Label>Mask cleanup</Switch.Label>
                   </Switch.Root>
                 </Stack>
-                <Button
-                  disabled={!originalImageSrc || isRemovingBackground}
-                  loading={isRemovingBackground}
-                  onClick={async () => {
-                    if (!originalImageSrc) {
-                      setBackgroundError('Upload an image first before removing the background.')
-                      setBackgroundSuccess(null)
-                      return
-                    }
-
-                    setIsRemovingBackground(true)
-                    setBackgroundError(null)
-                    setBackgroundSuccess(null)
-
-                    try {
-                      const transparentImage = await removeBackground(originalImageSrc, {
-                        edgePreset: rembgEdgePreset,
-                        model: rembgModel,
-                        postProcessMask: maskCleanup,
-                      })
-                      onTransparentImageReady(transparentImage)
-                      setSource('transparent')
-                      setBackgroundSuccess(
-                        'Background removed. You can keep editing before saving.'
-                      )
-                    } catch (error) {
-                      const message =
-                        error instanceof Error
-                          ? error.message
-                          : 'Background removal failed. Please try again.'
-                      setBackgroundError(message)
-                    } finally {
-                      setIsRemovingBackground(false)
-                    }
-                  }}
-                >
-                  Remove Background
-                </Button>
-                <RadioCard.Root
-                  colorPalette="primary"
-                  onValueChange={({ value }) => setSource(value as EditorSource)}
-                  size="sm"
-                  value={source}
-                  variant="surface"
-                >
-                  <RadioCard.Label fontSize="sm" fontWeight="600">
-                    Active source
-                  </RadioCard.Label>
-                  <HStack align="stretch">
-                    <RadioCard.Item value="original" flex="1">
-                      <RadioCard.ItemHiddenInput />
-                      <RadioCard.ItemControl>
-                        <RadioCard.ItemContent>
-                          <RadioCard.ItemText>Original</RadioCard.ItemText>
-                          <RadioCard.ItemDescription>
-                            Use the uploaded version.
-                          </RadioCard.ItemDescription>
-                        </RadioCard.ItemContent>
-                        <RadioCard.ItemIndicator />
-                      </RadioCard.ItemControl>
-                    </RadioCard.Item>
-                    <RadioCard.Item
-                      disabled={!transparentImageSrc}
-                      value="transparent"
-                      flex="1"
-                    >
-                      <RadioCard.ItemHiddenInput />
-                      <RadioCard.ItemControl>
-                        <RadioCard.ItemContent>
-                          <RadioCard.ItemText>Transparent</RadioCard.ItemText>
-                          <RadioCard.ItemDescription>
-                            Use the cutout version.
-                          </RadioCard.ItemDescription>
-                        </RadioCard.ItemContent>
-                        <RadioCard.ItemIndicator />
-                      </RadioCard.ItemControl>
-                    </RadioCard.Item>
-                  </HStack>
-                </RadioCard.Root>
-                {backgroundSuccess ? (
-                  // <Text color="fg.success" fontSize="sm">
-                  //   {backgroundSuccess}
-                  // </Text>
-                  <Alert.Root status={'success'}>
+                <Text color="fg.muted" fontSize="sm">
+                  Background removal runs automatically when the editor opens and whenever these
+                  settings change.
+                </Text>
+                {isRemovingBackground ? (
+                  <Alert.Root status="info">
                     <Alert.Indicator />
                     <Alert.Content>
-                      <Alert.Title>Success!</Alert.Title>
-                      <Alert.Description>{backgroundSuccess}</Alert.Description>
+                      <Alert.Title>Updating cutout...</Alert.Title>
+                      <Alert.Description>
+                        Re-processing the original image with your latest settings.
+                      </Alert.Description>
                     </Alert.Content>
-                    {/* <CloseButton pos="relative" top="-2" insetEnd="-2" /> */}
                   </Alert.Root>
                 ) : null}
                 {backgroundError ? (
-                  // <Text color="fg.error" fontSize="sm">
-                  //   {backgroundError}
-                  // </Text>
                   <Alert.Root status={'error'}>
                     <Alert.Indicator />
                     <Alert.Content>
                       <Alert.Title>Error!</Alert.Title>
                       <Alert.Description>{backgroundError}</Alert.Description>
                     </Alert.Content>
-                    {/* <CloseButton pos="relative" top="-2" insetEnd="-2" /> */}
                   </Alert.Root>
                 ) : null}
-                {!transparentImageSrc ? (
+                {!transparentPreviewSrc && !isRemovingBackground ? (
                   <Text color="fg.muted" fontSize="sm">
-                    No transparent version exists yet.
+                    Upload an image first to generate the cutout.
                   </Text>
                 ) : null}
               </Stack>
@@ -597,31 +639,24 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   Crop
                 </Text>
                 <Stack gap="3">
-                  <Text fontSize="sm">Zoom</Text>
-                  <Input
-                    max="2.4"
-                    min="1"
-                    onChange={(event) => setZoom(Number(event.target.value))}
-                    step="0.01"
-                    type="range"
-                    value={zoom}
-                  />
-                  <Text fontSize="sm">Horizontal</Text>
-                  <Input
-                    max="35"
-                    min="-35"
-                    onChange={(event) => setOffsetX(Number(event.target.value))}
-                    type="range"
-                    value={offsetX}
-                  />
-                  <Text fontSize="sm">Vertical</Text>
-                  <Input
-                    max="35"
-                    min="-35"
-                    onChange={(event) => setOffsetY(Number(event.target.value))}
-                    type="range"
-                    value={offsetY}
-                  />
+                  <Text color="fg.muted" fontSize="sm">
+                    Drag the image to reposition it and pull the frame handles to crop and resize.
+                  </Text>
+                  <HStack gap="3">
+                    <Button onClick={() => zoomImage(0.9)} rounded="16px" variant="outline">
+                      Zoom Out
+                    </Button>
+                    <Button onClick={() => zoomImage(1.1)} rounded="16px" variant="outline">
+                      Zoom In
+                    </Button>
+                  </HStack>
+                  <Button
+                    onClick={() => cropperRef.current?.reset()}
+                    rounded="16px"
+                    variant="outline"
+                  >
+                    Reset Framing
+                  </Button>
                 </Stack>
               </Stack>
             ) : null}
@@ -638,14 +673,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 </Text>
                 <HStack gap="3">
                   <Button
-                    onClick={() => setRotation((current) => current - 90)}
+                    onClick={() => applyRotation(rotation - 90)}
                     rounded="16px"
                     variant="outline"
                   >
                     Rotate Left
                   </Button>
                   <Button
-                    onClick={() => setRotation((current) => current + 90)}
+                    onClick={() => applyRotation(rotation + 90)}
                     rounded="16px"
                     variant="outline"
                   >
@@ -653,7 +688,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   </Button>
                 </HStack>
                 <Button
-                  onClick={() => setFlipHorizontal((current) => !current)}
+                  onClick={() => {
+                    cropperRef.current?.flipImage(true, false, {
+                      immediately: true,
+                      normalize: true,
+                      transitions: false,
+                    })
+                    setFlipHorizontal((current) => !current)
+                  }}
                   rounded="16px"
                   variant={flipHorizontal ? 'solid' : 'outline'}
                 >
@@ -664,7 +706,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   <Input
                     max="45"
                     min="-45"
-                    onChange={(event) => setRotation(Number(event.target.value))}
+                    onChange={(event) => applyRotation(Number(event.target.value))}
                     type="range"
                     value={rotation}
                   />
@@ -682,13 +724,18 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               setFlipHorizontal(defaultState.flipHorizontal)
               setGrayscale(defaultState.grayscale)
               setMaskCleanup(defaultState.maskCleanup)
-              setOffsetX(defaultState.offsetX)
-              setOffsetY(defaultState.offsetY)
               setRembgEdgePreset(defaultState.rembgEdgePreset)
               setRembgModel(defaultState.rembgModel)
-              setRotation(defaultState.rotation)
+              applyRotation(defaultState.rotation)
+              if (flipHorizontal) {
+                cropperRef.current?.flipImage(true, false, {
+                  immediately: true,
+                  normalize: true,
+                  transitions: false,
+                })
+              }
               setSaturate(defaultState.saturate)
-              setZoom(defaultState.zoom)
+              cropperRef.current?.reset()
             }}
             variant="ghost"
           >
@@ -699,23 +746,25 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               Cancel
             </Button>
             <Button
+              disabled={!transparentPreviewSrc || isRemovingBackground}
               loading={isSaving}
               onClick={async () => {
+                if (!transparentPreviewSrc) {
+                  return
+                }
+
                 setIsSaving(true)
                 try {
-                  const editedImage = await renderEditedImage({
-                    brightness,
-                    contrast,
-                    flipHorizontal,
-                    grayscale,
-                    imageSrc: currentImageSrc,
-                    offsetX,
-                    offsetY,
-                    rotation,
-                    saturate,
-                    zoom,
+                  const croppedCanvas = cropperRef.current?.getCanvas({
+                    height: 1024,
+                    imageSmoothingQuality: 'high',
+                    width: 1024,
                   })
-                  onSave(editedImage, source)
+
+                  if (!croppedCanvas) {
+                    throw new Error('Could not prepare the cropped image.')
+                  }
+                  onSave(croppedCanvas.toDataURL('image/png'))
                   onClose()
                 } finally {
                   setIsSaving(false)

@@ -141,17 +141,10 @@ export function ProfileReviewForm() {
           imageSrc={previewImage}
           isOpen={isEditorOpen}
           onClose={() => setIsEditorOpen(false)}
-          onSave={(editedImage, source) =>
+          onSave={(editedImage) =>
             updateProfile((current) => ({
               ...current,
-              avatarTransparentUrl: source === 'transparent' ? editedImage : null,
-              avatarUrl: source === 'original' ? editedImage : current.avatarUrl,
-            }))
-          }
-          onTransparentImageReady={(transparentImage) =>
-            updateProfile((current) => ({
-              ...current,
-              avatarTransparentUrl: transparentImage,
+              avatarTransparentUrl: editedImage,
             }))
           }
           originalImageSrc={profile.avatarUrl}

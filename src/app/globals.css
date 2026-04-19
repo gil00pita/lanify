@@ -1,3 +1,5 @@
+@import './vendor/react-advanced-cropper.css';
+
 :root {
   color-scheme: light;
   --lanyard-bg: #f5f1e8;
@@ -24,10 +26,7 @@ body {
     radial-gradient(circle at top right, rgba(38, 92, 75, 0.12), transparent 26%),
     linear-gradient(180deg, #f9f4ea 0%, #efe7d8 100%);
   color: var(--lanyard-text);
-  font-family:
-    "Inter",
-    "Segoe UI",
-    sans-serif;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
 a {
@@ -38,4 +37,17 @@ a {
 #__next,
 body > div:first-child {
   min-height: 100vh;
+}
+
+.lanify-profile-cropper {
+  height: 100%;
+  width: 100%;
+}
+
+.lanify-profile-cropper-overlay {
+  transition: color 0.2s ease;
+}
+
+.lanify-adjustable-image-source {
+  display: none;
 }

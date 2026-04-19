@@ -1,5 +1,8 @@
+from io import BytesIO
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
+from PIL import Image, ImageFilter
 from rembg import new_session, remove
 
 
@@ -7,26 +10,26 @@ EDGE_PRESET_OPTIONS = {
     "off": {
         "alpha_matting": False,
         "alpha_matting_background_threshold": 10,
-        "alpha_matting_erode_size": 10,
+        "alpha_matting_erode_size": 0,
         "alpha_matting_foreground_threshold": 240,
     },
     "sharp": {
         "alpha_matting": True,
-        "alpha_matting_background_threshold": 10,
-        "alpha_matting_erode_size": 5,
-        "alpha_matting_foreground_threshold": 245,
+        "alpha_matting_background_threshold": 5,
+        "alpha_matting_erode_size": 0,
+        "alpha_matting_foreground_threshold": 250,
     },
     "balanced": {
         "alpha_matting": True,
-        "alpha_matting_background_threshold": 10,
-        "alpha_matting_erode_size": 10,
+        "alpha_matting_background_threshold": 12,
+        "alpha_matting_erode_size": 8,
         "alpha_matting_foreground_threshold": 240,
     },
     "soft": {
         "alpha_matting": True,
-        "alpha_matting_background_threshold": 8,
-        "alpha_matting_erode_size": 15,
-        "alpha_matting_foreground_threshold": 235,
+        "alpha_matting_background_threshold": 24,
+        "alpha_matting_erode_size": 20,
+        "alpha_matting_foreground_threshold": 220,
     },
 }
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
@@ -45,6 +48,28 @@ def get_session(model_name: str):
         MODEL_SESSIONS[model_name] = session
 
     return session
+
+
+def refine_edges(image_bytes: bytes, edge_preset: str) -> bytes:
+    if edge_preset == "off":
+        return image_bytes
+
+    image = Image.open(BytesIO(image_bytes)).convert("RGBA")
+    alpha = image.getchannel("A")
+
+    if edge_preset == "sharp":
+        alpha = alpha.filter(ImageFilter.MinFilter(5))
+        alpha = alpha.point(lambda value: 255 if value >= 210 else 0)
+    elif edge_preset == "balanced":
+        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=1.25))
+    elif edge_preset == "soft":
+        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=3.5))
+
+    image.putalpha(alpha)
+    output = BytesIO()
+    image.save(output, format="PNG")
+
+    return output.getvalue()
 
 
 @app.get("/health")
@@ -83,6 +108,7 @@ async def remove_background(
             session=get_session(model),
             **EDGE_PRESET_OPTIONS[edgePreset],
         )
+        output = refine_edges(output, edgePreset)
     except Exception as error:  # pragma: no cover - defensive service boundary
         return JSONResponse(
             content={"error": f"Rembg failed to process the image: {error}"},

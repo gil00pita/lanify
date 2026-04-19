@@ -50,20 +50,20 @@ const colors = {
   },
 }
 
-const defaultButtonRecipe = defaultConfig.theme.recipes.button
+const defaultButtonRecipe = defaultConfig.theme?.recipes?.button
 
 const buttonRecipe = defineRecipe({
-  ...defaultButtonRecipe,
+  ...(defaultButtonRecipe ?? {}),
   base: {
-    ...defaultButtonRecipe.base,
+    ...(defaultButtonRecipe?.base ?? {}),
     borderRadius: 'full',
   },
   variants: {
-    ...defaultButtonRecipe.variants,
+    ...(defaultButtonRecipe?.variants ?? {}),
     variant: {
-      ...defaultButtonRecipe.variants.variant,
+      ...(defaultButtonRecipe?.variants?.variant ?? {}),
       solid: {
-        ...defaultButtonRecipe.variants.variant.solid,
+        ...(defaultButtonRecipe?.variants?.variant?.solid ?? {}),
         bg: 'primary.solid',
         color: 'primary.contrast',
         _hover: {
@@ -76,8 +76,8 @@ const buttonRecipe = defineRecipe({
     },
   },
   defaultVariants: {
-    ...defaultButtonRecipe.defaultVariants,
-    colorPalette: 'primary',
+    ...(defaultButtonRecipe?.defaultVariants ?? {}),
+    colorPalette: 'primary' as any,
   },
 })
 
