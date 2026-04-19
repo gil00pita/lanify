@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+  Alert,
   Box,
   Button,
   HStack,
   Image,
   Input,
   NativeSelect,
+  RadioCard,
   SegmentGroup,
   Stack,
   Switch,
@@ -462,29 +464,72 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 >
                   Remove Background
                 </Button>
-                <Button
-                  disabled={!transparentImageSrc}
-                  onClick={() => setSource('transparent')}
-                  variant={source === 'transparent' ? 'solid' : 'outline'}
+                <RadioCard.Root
+                  colorPalette="primary"
+                  onValueChange={({ value }) => setSource(value as EditorSource)}
+                  size="sm"
+                  value={source}
+                  variant="surface"
                 >
-                  Use Transparent
-                </Button>
-                <Button
-                  disabled={!originalImageSrc}
-                  onClick={() => setSource('original')}
-                  variant={source === 'original' ? 'solid' : 'outline'}
-                >
-                  Use Original
-                </Button>
+                  <RadioCard.Label fontSize="sm" fontWeight="600">
+                    Active source
+                  </RadioCard.Label>
+                  <HStack align="stretch">
+                    <RadioCard.Item value="original" flex="1">
+                      <RadioCard.ItemHiddenInput />
+                      <RadioCard.ItemControl>
+                        <RadioCard.ItemContent>
+                          <RadioCard.ItemText>Original</RadioCard.ItemText>
+                          <RadioCard.ItemDescription>
+                            Use the uploaded version.
+                          </RadioCard.ItemDescription>
+                        </RadioCard.ItemContent>
+                        <RadioCard.ItemIndicator />
+                      </RadioCard.ItemControl>
+                    </RadioCard.Item>
+                    <RadioCard.Item
+                      disabled={!transparentImageSrc}
+                      value="transparent"
+                      flex="1"
+                    >
+                      <RadioCard.ItemHiddenInput />
+                      <RadioCard.ItemControl>
+                        <RadioCard.ItemContent>
+                          <RadioCard.ItemText>Transparent</RadioCard.ItemText>
+                          <RadioCard.ItemDescription>
+                            Use the cutout version.
+                          </RadioCard.ItemDescription>
+                        </RadioCard.ItemContent>
+                        <RadioCard.ItemIndicator />
+                      </RadioCard.ItemControl>
+                    </RadioCard.Item>
+                  </HStack>
+                </RadioCard.Root>
                 {backgroundSuccess ? (
-                  <Text color="green.300" fontSize="sm">
-                    {backgroundSuccess}
-                  </Text>
+                  // <Text color="fg.success" fontSize="sm">
+                  //   {backgroundSuccess}
+                  // </Text>
+                  <Alert.Root status={'success'}>
+                    <Alert.Indicator />
+                    <Alert.Content>
+                      <Alert.Title>Success!</Alert.Title>
+                      <Alert.Description>{backgroundSuccess}</Alert.Description>
+                    </Alert.Content>
+                    {/* <CloseButton pos="relative" top="-2" insetEnd="-2" /> */}
+                  </Alert.Root>
                 ) : null}
                 {backgroundError ? (
-                  <Text color="red.300" fontSize="sm">
-                    {backgroundError}
-                  </Text>
+                  // <Text color="fg.error" fontSize="sm">
+                  //   {backgroundError}
+                  // </Text>
+                  <Alert.Root status={'error'}>
+                    <Alert.Indicator />
+                    <Alert.Content>
+                      <Alert.Title>Error!</Alert.Title>
+                      <Alert.Description>{backgroundError}</Alert.Description>
+                    </Alert.Content>
+                    {/* <CloseButton pos="relative" top="-2" insetEnd="-2" /> */}
+                  </Alert.Root>
                 ) : null}
                 {!transparentImageSrc ? (
                   <Text color="fg.muted" fontSize="sm">

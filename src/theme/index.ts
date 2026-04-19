@@ -50,10 +50,34 @@ const colors = {
   },
 }
 
+const defaultButtonRecipe = defaultConfig.theme.recipes.button
+
 const buttonRecipe = defineRecipe({
+  ...defaultButtonRecipe,
+  base: {
+    ...defaultButtonRecipe.base,
+    borderRadius: 'full',
+  },
+  variants: {
+    ...defaultButtonRecipe.variants,
+    variant: {
+      ...defaultButtonRecipe.variants.variant,
+      solid: {
+        ...defaultButtonRecipe.variants.variant.solid,
+        bg: 'primary.solid',
+        color: 'primary.contrast',
+        _hover: {
+          bg: 'primary.600',
+        },
+        _expanded: {
+          bg: 'primary.600',
+        },
+      },
+    },
+  },
   defaultVariants: {
+    ...defaultButtonRecipe.defaultVariants,
     colorPalette: 'primary',
-    rounded: 'full',
   },
 })
 
@@ -76,7 +100,7 @@ export const theme = {
       colors: {
         primary: {
           solid: { value: { base: '{colors.primary.500}', _dark: '{colors.primary.500}' } },
-          contrast: { value: { base: '{colors.primary.50}', _dark: '{colors.primary.50}' } },
+          contrast: { value: { base: '{colors.white}', _dark: '{colors.white}' } },
           fg: { value: { base: '{colors.primary.700}', _dark: '{colors.primary.300}' } },
           muted: { value: { base: '{colors.primary.100}', _dark: '{colors.primary.900}' } },
           subtle: { value: { base: '{colors.primary.200}', _dark: '{colors.primary.800}' } },

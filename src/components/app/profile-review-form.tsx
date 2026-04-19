@@ -99,32 +99,40 @@ export function ProfileReviewForm() {
         />
         <Stack gap="3" w="full">
           <HStack gap="3" w="full">
-            <Button rounded="full" onClick={() => fileInputRef.current?.click()} variant="surface">
-              Upload New Picture
-            </Button>
             <Button
               rounded="full"
-              onClick={() =>
-                updateProfile((current) => ({
-                  ...current,
-                  avatarUrl: null,
-                  avatarTransparentUrl: null,
-                }))
-              }
+              onClick={() => fileInputRef.current?.click()}
+              variant="surface"
+              w={hasProfilePicture ? undefined : 'full'}
+            >
+              Upload New Picture
+            </Button>
+            {hasProfilePicture ? (
+              <Button
+                rounded="full"
+                onClick={() =>
+                  updateProfile((current) => ({
+                    ...current,
+                    avatarUrl: null,
+                    avatarTransparentUrl: null,
+                  }))
+                }
+                variant="surface"
+              >
+                Remove Picture
+              </Button>
+            ) : null}
+          </HStack>
+          {hasProfilePicture ? (
+            <Button
+              rounded="full"
+              w={'full'}
+              onClick={() => setIsEditorOpen(true)}
               variant="surface"
             >
-              Remove Picture
+              Edit Current Picture
             </Button>
-          </HStack>
-          <Button
-            rounded="full"
-            w={'full'}
-            disabled={!hasProfilePicture}
-            onClick={() => setIsEditorOpen(true)}
-            variant="surface"
-          >
-            Edit Current Picture
-          </Button>
+          ) : null}
         </Stack>
       </Stack>
 
