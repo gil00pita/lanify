@@ -1,16 +1,30 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { Box, Button, HStack, Image, Input, SegmentGroup, Stack, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  HStack,
+  Image,
+  Input,
+  NativeSelect,
+  SegmentGroup,
+  Stack,
+  Switch,
+  Text,
+} from '@chakra-ui/react'
 
 type EditorTool = 'background' | 'crop' | 'filter' | 'rotate'
 type EditorSource = 'original' | 'transparent'
+type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
+type RembgModel = 'birefnet-portrait' | 'u2net_human_seg' | 'u2net'
 
 type ProfileImageEditorModalProps = {
   imageSrc: string
   isOpen: boolean
   onClose: () => void
+  onTransparentImageReady: (imageSrc: string) => void
   onSave: (imageSrc: string, source: EditorSource) => void
   originalImageSrc?: string | null
   transparentImageSrc?: string | null
@@ -28,11 +42,91 @@ const defaultState = {
   contrast: 100,
   flipHorizontal: false,
   grayscale: 0,
+  maskCleanup: true,
   offsetX: 0,
   offsetY: 0,
+  rembgEdgePreset: 'balanced' as RembgEdgePreset,
+  rembgModel: 'birefnet-portrait' as RembgModel,
   rotation: 0,
   saturate: 100,
   zoom: 1,
+}
+
+const rembgModelOptions: Array<{ label: string; value: RembgModel }> = [
+  { label: 'Portrait Pro', value: 'birefnet-portrait' },
+  { label: 'Human Segmentation', value: 'u2net_human_seg' },
+  { label: 'General Purpose', value: 'u2net' },
+]
+
+const edgePresetOptions: Array<{ label: string; value: RembgEdgePreset }> = [
+  { label: 'Off', value: 'off' },
+  { label: 'Sharp', value: 'sharp' },
+  { label: 'Balanced', value: 'balanced' },
+  { label: 'Soft', value: 'soft' },
+]
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Could not read the processed image.'))
+    reader.onloadend = () => {
+      const result = typeof reader.result === 'string' ? reader.result : null
+
+      if (!result) {
+        reject(new Error('Could not read the processed image.'))
+        return
+      }
+
+      resolve(result)
+    }
+    reader.readAsDataURL(blob)
+  })
+}
+
+async function dataUrlToFile(dataUrl: string, filename: string) {
+  const response = await fetch(dataUrl)
+  const blob = await response.blob()
+  const extension = blob.type.split('/')[1] ?? 'png'
+
+  return new File([blob], `${filename}.${extension}`, { type: blob.type || 'image/png' })
+}
+
+async function removeBackground(
+  imageSrc: string,
+  options: {
+    edgePreset: RembgEdgePreset
+    model: RembgModel
+    postProcessMask: boolean
+  }
+) {
+  const file = await dataUrlToFile(imageSrc, 'profile-image')
+  const formData = new FormData()
+  formData.append('image', file)
+  formData.append('edgePreset', options.edgePreset)
+  formData.append('model', options.model)
+  formData.append('postProcessMask', String(options.postProcessMask))
+
+  const response = await fetch('/api/remove-background', {
+    body: formData,
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    let message = 'Background removal failed. Please try again.'
+
+    try {
+      const payload = (await response.json()) as { error?: string }
+      message = payload.error ?? message
+    } catch {
+      // Fall back to the default message when the response is not JSON.
+    }
+
+    throw new Error(message)
+  }
+
+  const blob = await response.blob()
+
+  return blobToDataUrl(blob)
 }
 
 async function renderEditedImage(params: {
@@ -92,37 +186,63 @@ async function renderEditedImage(params: {
 }
 
 export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
-  const { imageSrc, isOpen, onClose, onSave, originalImageSrc, transparentImageSrc } = props
+  const {
+    imageSrc,
+    isOpen,
+    onClose,
+    onSave,
+    onTransparentImageReady,
+    originalImageSrc,
+    transparentImageSrc,
+  } = props
   const [activeTool, setActiveTool] = useState<EditorTool>('background')
+  const [backgroundError, setBackgroundError] = useState<string | null>(null)
+  const [backgroundSuccess, setBackgroundSuccess] = useState<string | null>(null)
   const [brightness, setBrightness] = useState(defaultState.brightness)
   const [contrast, setContrast] = useState(defaultState.contrast)
   const [flipHorizontal, setFlipHorizontal] = useState(defaultState.flipHorizontal)
   const [grayscale, setGrayscale] = useState(defaultState.grayscale)
+  const [isRemovingBackground, setIsRemovingBackground] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [maskCleanup, setMaskCleanup] = useState(defaultState.maskCleanup)
   const [offsetX, setOffsetX] = useState(defaultState.offsetX)
   const [offsetY, setOffsetY] = useState(defaultState.offsetY)
+  const [rembgEdgePreset, setRembgEdgePreset] = useState(defaultState.rembgEdgePreset)
+  const [rembgModel, setRembgModel] = useState(defaultState.rembgModel)
   const [rotation, setRotation] = useState(defaultState.rotation)
   const [saturate, setSaturate] = useState(defaultState.saturate)
   const [source, setSource] = useState<EditorSource>('original')
   const [zoom, setZoom] = useState(defaultState.zoom)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
     if (!isOpen) {
+      wasOpenRef.current = false
       return
     }
 
+    if (wasOpenRef.current) {
+      return
+    }
+
+    wasOpenRef.current = true
     setActiveTool('background')
+    setBackgroundError(null)
+    setBackgroundSuccess(null)
     setBrightness(defaultState.brightness)
     setContrast(defaultState.contrast)
     setFlipHorizontal(defaultState.flipHorizontal)
     setGrayscale(defaultState.grayscale)
+    setMaskCleanup(defaultState.maskCleanup)
     setOffsetX(defaultState.offsetX)
     setOffsetY(defaultState.offsetY)
+    setRembgEdgePreset(defaultState.rembgEdgePreset)
+    setRembgModel(defaultState.rembgModel)
     setRotation(defaultState.rotation)
     setSaturate(defaultState.saturate)
     setZoom(defaultState.zoom)
     setSource(transparentImageSrc ? 'transparent' : 'original')
-  }, [isOpen, transparentImageSrc, imageSrc])
+  }, [isOpen, transparentImageSrc])
 
   const currentImageSrc = useMemo(() => {
     if (source === 'transparent' && transparentImageSrc) {
@@ -198,7 +318,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
             <Box
               aspectRatio={1}
-              bg="rgba(255,255,255,0.04)"
+              bg="bg.subtle"
+              backgroundColor="var(--lanify-colors-bg)"
+              backgroundPosition="0 0, 10px 10px"
+              backgroundSize="20px 20px"
+              bgImage={[
+                'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, transparent 25%, transparent 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
+                'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, var(--lanify-colors-bg) 25%, var(--lanify-colors-bg) 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
+              ].join(', ')}
               border="1px solid rgba(255,255,255,0.12)"
               borderRadius="28px"
               overflow="hidden"
@@ -242,24 +369,123 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   Background
                 </Text>
                 <Text color="fg.muted" fontSize="sm">
-                  Use the transparent cutout when it is available. This keeps the editor aligned
-                  with future rembg integration.
+                  Tune the background removal options.
                 </Text>
+                <Stack gap="3">
+                  <Stack gap="2" display={'none'}>
+                    <Text fontSize="sm" fontWeight="600">
+                      Model
+                    </Text>
+                    <NativeSelect.Root size="sm" variant="subtle">
+                      <NativeSelect.Field
+                        value={rembgModel}
+                        onChange={(event) => setRembgModel(event.currentTarget.value as RembgModel)}
+                      >
+                        {rembgModelOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  </Stack>
+
+                  <Stack gap="2">
+                    <Text fontSize="sm" fontWeight="600">
+                      Edge Refinement
+                    </Text>
+                    <SegmentGroup.Root
+                      size="sm"
+                      value={rembgEdgePreset}
+                      onValueChange={({ value }) => setRembgEdgePreset(value as RembgEdgePreset)}
+                    >
+                      <SegmentGroup.Indicator />
+                      <SegmentGroup.Items
+                        items={edgePresetOptions.map((option) => ({
+                          label: option.label,
+                          value: option.value,
+                        }))}
+                      />
+                    </SegmentGroup.Root>
+                    <Text color="fg.muted" fontSize="xs">
+                      `Sharp` keeps harder edges. `Soft` uses stronger alpha matting for hair and
+                      natural portraits.
+                    </Text>
+                  </Stack>
+
+                  <Switch.Root
+                    checked={maskCleanup}
+                    colorPalette="primary"
+                    onCheckedChange={(event) => setMaskCleanup(event.checked)}
+                  >
+                    <Switch.HiddenInput />
+                    <Switch.Control />
+                    <Switch.Label>Mask cleanup</Switch.Label>
+                  </Switch.Root>
+                </Stack>
                 <Button
-                  disabled={!transparentImageSrc}
-                  onClick={() => setSource('transparent')}
-                  rounded="16px"
+                  disabled={!originalImageSrc || isRemovingBackground}
+                  loading={isRemovingBackground}
+                  onClick={async () => {
+                    if (!originalImageSrc) {
+                      setBackgroundError('Upload an image first before removing the background.')
+                      setBackgroundSuccess(null)
+                      return
+                    }
+
+                    setIsRemovingBackground(true)
+                    setBackgroundError(null)
+                    setBackgroundSuccess(null)
+
+                    try {
+                      const transparentImage = await removeBackground(originalImageSrc, {
+                        edgePreset: rembgEdgePreset,
+                        model: rembgModel,
+                        postProcessMask: maskCleanup,
+                      })
+                      onTransparentImageReady(transparentImage)
+                      setSource('transparent')
+                      setBackgroundSuccess(
+                        'Background removed. You can keep editing before saving.'
+                      )
+                    } catch (error) {
+                      const message =
+                        error instanceof Error
+                          ? error.message
+                          : 'Background removal failed. Please try again.'
+                      setBackgroundError(message)
+                    } finally {
+                      setIsRemovingBackground(false)
+                    }
+                  }}
                 >
                   Remove Background
                 </Button>
                 <Button
+                  disabled={!transparentImageSrc}
+                  onClick={() => setSource('transparent')}
+                  variant={source === 'transparent' ? 'solid' : 'outline'}
+                >
+                  Use Transparent
+                </Button>
+                <Button
                   disabled={!originalImageSrc}
                   onClick={() => setSource('original')}
-                  rounded="16px"
-                  variant="outline"
+                  variant={source === 'original' ? 'solid' : 'outline'}
                 >
                   Use Original
                 </Button>
+                {backgroundSuccess ? (
+                  <Text color="green.300" fontSize="sm">
+                    {backgroundSuccess}
+                  </Text>
+                ) : null}
+                {backgroundError ? (
+                  <Text color="red.300" fontSize="sm">
+                    {backgroundError}
+                  </Text>
+                ) : null}
                 {!transparentImageSrc ? (
                   <Text color="fg.muted" fontSize="sm">
                     No transparent version exists yet.
@@ -410,19 +636,21 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               setContrast(defaultState.contrast)
               setFlipHorizontal(defaultState.flipHorizontal)
               setGrayscale(defaultState.grayscale)
+              setMaskCleanup(defaultState.maskCleanup)
               setOffsetX(defaultState.offsetX)
               setOffsetY(defaultState.offsetY)
+              setRembgEdgePreset(defaultState.rembgEdgePreset)
+              setRembgModel(defaultState.rembgModel)
               setRotation(defaultState.rotation)
               setSaturate(defaultState.saturate)
               setZoom(defaultState.zoom)
             }}
-            rounded="16px"
             variant="ghost"
           >
             Reset
           </Button>
           <HStack gap="3">
-            <Button onClick={onClose} rounded="16px" variant="outline">
+            <Button onClick={onClose} variant="outline">
               Cancel
             </Button>
             <Button
@@ -448,7 +676,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   setIsSaving(false)
                 }
               }}
-              rounded="16px"
             >
               Save Image
             </Button>

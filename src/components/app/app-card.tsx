@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
-import { Box, HStack, Image, Stack, Text } from '@chakra-ui/react'
+import { Box, Image, Stack, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 
 import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
@@ -133,7 +133,7 @@ function AppCardFront(props: {
   firstName?: string
   foreground: string
   lastName?: string
-  showSignature: boolean
+  showSignature?: boolean
   variationId?: string
 }) {
   const { card, color, firstName, foreground, lastName, showSignature, variationId } = props
@@ -374,7 +374,13 @@ function AppCardBack(props: {
 
   return (
     <Stack gap="4" h="full" justify="space-between">
-      <AppCardFront card={card} color={color} foreground={foreground} variationId={variationId} />
+      <AppCardFront
+        card={card}
+        color={color}
+        foreground={foreground}
+        variationId={variationId}
+        showSignature
+      />
 
       <Box bg={foreground} borderRadius="full" h="4px" opacity="0.14" />
     </Stack>
@@ -393,7 +399,6 @@ function AppCardFace(props: {
     <Box
       className="card-face"
       border="inherit"
-      color={'bg'}
       borderRadius="24px"
       boxShadow="inherit"
       color={foreground}

@@ -43,6 +43,29 @@ function cloneCard(card: CardDesign) {
   return structuredClone(card)
 }
 
+function stripDataUrl(value: string | null) {
+  return value?.startsWith('data:') ? null : value
+}
+
+function sanitizePersistedCard(card: CardDesign): CardDesign {
+  return {
+    ...card,
+    portraitImage: stripDataUrl(card.portraitImage),
+    signatureData:
+      card.signatureData && !card.signatureData.dataUrl.startsWith('data:')
+        ? card.signatureData
+        : null,
+  }
+}
+
+function sanitizePersistedProfile(profile: UserProfile): UserProfile {
+  return {
+    ...profile,
+    avatarTransparentUrl: stripDataUrl(profile.avatarTransparentUrl),
+    avatarUrl: stripDataUrl(profile.avatarUrl),
+  }
+}
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -234,9 +257,9 @@ export const useAppStore = create<AppStore>()(
       name: 'lanyard-card-generator-store',
       partialize: (state) => ({
         auth: state.auth,
-        cards: state.cards,
+        cards: state.cards.map(sanitizePersistedCard),
         printRequests: state.printRequests,
-        profile: state.profile,
+        profile: sanitizePersistedProfile(state.profile),
         ui: state.ui,
         wizard: state.wizard,
       }),

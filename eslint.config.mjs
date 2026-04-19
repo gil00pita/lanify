@@ -1,6 +1,7 @@
 import eslint from '@eslint/js'
 import tsParser from '@typescript-eslint/parser'
 import { defineConfig } from 'eslint/config'
+import unusedImports from 'eslint-plugin-unused-imports'
 
 export default defineConfig([
   {
@@ -8,7 +9,30 @@ export default defineConfig([
   },
   eslint.configs.recommended,
   {
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    plugins: {
+      'unused-imports': unusedImports,
+    },
+    rules: {
+      'no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+          vars: 'all',
+          varsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
+    plugins: {
+      'unused-imports': unusedImports,
+    },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -18,7 +42,6 @@ export default defineConfig([
     },
     rules: {
       'no-undef': 'off',
-      'no-unused-vars': 'off',
     },
   },
   {

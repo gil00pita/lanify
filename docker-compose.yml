@@ -1,0 +1,34 @@
+services:
+  web:
+    container_name: lanify-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: yarn dev --hostname 0.0.0.0 --port 3000
+    environment:
+      NODE_ENV: development
+      REMBG_SERVICE_URL: http://rembg:7000
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./src:/app/src
+      - ./next.config.mjs:/app/next.config.mjs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./next-env.d.ts:/app/next-env.d.ts
+    depends_on:
+      rembg:
+        condition: service_healthy
+
+  rembg:
+    container_name: lanify-rembg
+    build:
+      context: ./rembg-service
+      dockerfile: Dockerfile
+    expose:
+      - '7000'
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7000/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s

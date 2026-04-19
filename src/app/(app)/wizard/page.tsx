@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-import { Box, Button, Grid, HStack, Stack, Text, VStack } from '@chakra-ui/react'
+import { Alert, Box, Button, Grid, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
@@ -51,7 +51,7 @@ function BackgroundSampleCard(props: { accent: string; foreground: string }) {
           fontWeight="500"
           lineHeight="0.95"
         >
-          Library Card
+          Example Card
         </Text>
       </Stack>
       <Box bottom="20px" left="20px" position="absolute" right="20px">
@@ -142,15 +142,21 @@ export default function WizardPage() {
           // w="full"
         >
           <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="500" lineHeight="0.95">
-            Welcome {profile.displayName}
+            Welcome, {profile.displayName}
           </Text>
 
           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="400" mt="1">
             {profile.role}
           </Text>
+
           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="400" mt="1" color={'fg'}>
             Please confirm your profile picture.
           </Text>
+
+          <Alert.Root status="info" inline size={'sm'}>
+            <Alert.Indicator />
+            <Alert.Title>Make sure the background is transparent.</Alert.Title>
+          </Alert.Root>
 
           <ProfileReviewForm />
 
@@ -158,10 +164,11 @@ export default function WizardPage() {
             <Text color="fg.muted" fontSize="sm">
               {hasProfilePicture ? 'Profile picture ready.' : 'Upload a profile picture to Start.'}
             </Text>
+
             <Button
-              bg="#0f4f87"
-              borderRadius="16px"
-              color="white"
+              variant={'solid'}
+              rounded={'full'}
+              colorPalette="primary"
               disabled={!hasProfilePicture}
               w={'full'}
               onClick={() => {

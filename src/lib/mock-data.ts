@@ -25,11 +25,11 @@ export const DEFAULT_PATTERN_SETTINGS: PatternSettings = {
 export const SEEDED_PROFILE: UserProfile = {
   avatarTransparentUrl: null,
   avatarUrl: null,
-  displayName: 'Amelia Hart',
-  firstName: 'Amelia',
+  displayName: 'Gil Alvaro',
+  firstName: 'Gil',
   id: 'profile_seeded_lanyard',
-  lastName: 'Hart',
-  role: 'Member Experience Director',
+  lastName: 'Alvaro',
+  role: 'Product Designer',
 }
 
 export function createDraftCard(userId: string, profile: UserProfile): CardDesign {

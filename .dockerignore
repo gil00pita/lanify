@@ -1,0 +1,10 @@
+.git
+.gitignore
+.next
+.codex
+coverage
+node_modules
+npm-debug.log*
+tmp
+yarn-debug.log*
+yarn-error.log*
