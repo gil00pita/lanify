@@ -3,7 +3,6 @@
 import { CSSProperties, forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import {
-  Accordion,
   Alert,
   Box,
   Button,
@@ -121,6 +120,12 @@ const colorControls: Array<{
     min: 0,
     stateKey: 'grayscale',
   },
+]
+
+const editorToolItems: Array<{ id: EditorTool; label: string; shortLabel: string }> = [
+  { id: 'crop', label: 'Crop', shortLabel: '[]' },
+  { id: 'color', label: 'Color', shortLabel: 'o' },
+  { id: 'edge', label: 'Edge', shortLabel: '()' },
 ]
 
 type AdjustmentProps = {
@@ -324,6 +329,9 @@ function createHistorySignature(entry: HistoryEntry) {
 export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const { imageSrc, isOpen, onClose, onSave, originalImageSrc, transparentImageSrc } = props
   const [activeTool, setActiveTool] = useState<EditorTool>('crop')
+  const [activeColorControl, setActiveColorControl] = useState<
+    'brightness' | 'contrast' | 'saturate' | 'grayscale'
+  >('brightness')
   const [backgroundError, setBackgroundError] = useState<string | null>(null)
   const [editorState, setEditorState] = useState<EditorState>(cloneEditorState(defaultState))
   const [historyState, setHistoryState] = useState<{ entries: HistoryEntry[]; index: number }>({
@@ -465,9 +473,79 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     scheduleHistoryCommit()
   }
 
+  function handleUndo() {
+    if (!canUndo) {
+      return
+    }
+
+    const nextIndex = historyState.index - 1
+    const nextEntry = historyState.entries[nextIndex]
+
+    if (!nextEntry) {
+      return
+    }
+
+    setHistoryState((current) => ({
+      ...current,
+      index: nextIndex,
+    }))
+    restoreHistoryEntry(nextEntry)
+  }
+
+  function handleRedo() {
+    if (!canRedo) {
+      return
+    }
+
+    const nextIndex = historyState.index + 1
+    const nextEntry = historyState.entries[nextIndex]
+
+    if (!nextEntry) {
+      return
+    }
+
+    setHistoryState((current) => ({
+      ...current,
+      index: nextIndex,
+    }))
+    restoreHistoryEntry(nextEntry)
+  }
+
   useEffect(() => {
     editorStateRef.current = editorState
   }, [editorState])
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      const isModifierPressed = event.metaKey || event.ctrlKey
+
+      if (!isModifierPressed || event.altKey) {
+        return
+      }
+
+      if (event.key.toLowerCase() !== 'z') {
+        return
+      }
+
+      event.preventDefault()
+
+      if (event.shiftKey) {
+        handleRedo()
+      } else {
+        handleUndo()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [canRedo, canUndo, historyState.entries, historyState.index, isOpen])
 
   useEffect(() => {
     if (!isOpen) {
@@ -497,6 +575,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     }
 
     setActiveTool('crop')
+    setActiveColorControl('brightness')
     setEditorState(initialState)
     setProcessedTransparentSrc(transparentImageSrc ?? null)
     setHistoryState({
@@ -590,6 +669,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const currentImageSrc = transparentPreviewSrc ?? processingSourceImage
   const cropperEnabled = activeTool === 'crop'
   const isColorTool = activeTool === 'color'
+  const currentColorControl =
+    colorControls.find((control) => control.stateKey === activeColorControl) ?? colorControls[0]
 
   if (!isOpen) {
     return null
@@ -627,432 +708,427 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               Tune the portrait before saving it back into your profile.
             </Text>
           </Stack>
+          <HStack gap="2">
+            <Button
+              aria-label="Undo last edit"
+              disabled={!canUndo}
+              onClick={handleUndo}
+              rounded="full"
+              size="sm"
+              variant="ghost"
+            >
+              Undo
+            </Button>
+            <Button
+              aria-label="Redo last undone edit"
+              disabled={!canRedo}
+              onClick={handleRedo}
+              rounded="full"
+              size="sm"
+              variant="ghost"
+            >
+              Redo
+            </Button>
+          </HStack>
         </HStack>
 
-        <HStack align="stretch" flexDirection={{ base: 'column', lg: 'row' }} gap="6">
-          <Stack flex="1" gap="4">
-            <Box
-              aspectRatio={1}
-              bg="bg.subtle"
-              backgroundColor="var(--lanify-colors-bg)"
-              backgroundPosition="0 0, 10px 10px"
-              backgroundSize="20px 20px"
-              bgImage={[
-                'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, transparent 25%, transparent 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
-                'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, var(--lanify-colors-bg) 25%, var(--lanify-colors-bg) 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
-              ].join(', ')}
-              border="1px solid rgba(255,255,255,0.12)"
-              borderRadius="28px"
-              maxW="420px"
-              mx="auto"
-              overflow="hidden"
-              position="relative"
-              w="full"
-            >
-              <Cropper
-                backgroundComponent={AdjustableCropperBackground}
-                backgroundProps={{
-                  brightness,
-                  contrast,
-                  grayscale,
-                  saturate,
-                }}
-                backgroundWrapperProps={{
-                  moveImage: cropperEnabled,
-                  scaleImage: cropperEnabled,
-                }}
-                className="lanify-profile-cropper"
-                imageRestriction={ImageRestriction.none}
-                onChange={() => scheduleHistoryCommit()}
-                ref={cropperRef}
-                src={currentImageSrc}
-                stencilComponent={RectangleStencil}
-                stencilProps={{
-                  aspectRatio: 1,
-                  handlers: cropperEnabled,
-                  lines: cropperEnabled,
-                  movable: cropperEnabled,
-                  overlayClassName: 'lanify-profile-cropper-overlay',
-                  resizable: cropperEnabled,
-                }}
-                transitions={false}
-              />
-              {isRemovingBackground ? (
-                <Box
-                  alignItems="center"
-                  backdropFilter="blur(2px)"
-                  bg="rgba(17,16,13,0.36)"
-                  display="flex"
-                  inset="0"
-                  justifyContent="center"
-                  pointerEvents="none"
-                  position="absolute"
-                  zIndex="1"
-                >
-                  <Stack align="center" gap="3">
-                    <Spinner borderWidth="3px" color="white" size="xl" />
-                    <Text color="white" fontSize="sm" fontWeight="600">
-                      Updating cutout...
-                    </Text>
-                  </Stack>
-                </Box>
-              ) : null}
-            </Box>
-          </Stack>
-
-          <Stack
-            bg="rgba(255,255,255,0.05)"
-            border="1px solid rgba(255,255,255,0.10)"
+        <Stack gap="4">
+          <Box
+            aspectRatio={1}
+            bg="black"
+            backgroundColor="var(--lanify-colors-bg)"
+            backgroundPosition="0 0, 10px 10px"
+            backgroundSize="20px 20px"
+            bgImage={[
+              'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, transparent 25%, transparent 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
+              'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, var(--lanify-colors-bg) 25%, var(--lanify-colors-bg) 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
+            ].join(', ')}
+            border="1px solid rgba(255,255,255,0.08)"
             borderRadius="24px"
             flexShrink={0}
-            gap="4"
-            p="5"
-            w={{ base: 'full', lg: '320px' }}
+            maxW="540px"
+            mx="auto"
+            overflow="hidden"
+            position="relative"
+            w={{ base: 'min(100%, 420px)', md: '540px' }}
           >
-            <Accordion.Root
-              collapsible={false}
-              onValueChange={({ value }) => setActiveTool((value[0] as EditorTool) ?? 'crop')}
-              value={[activeTool]}
-              variant="subtle"
+            <Cropper
+              backgroundComponent={AdjustableCropperBackground}
+              backgroundProps={{
+                brightness,
+                contrast,
+                grayscale,
+                saturate,
+              }}
+              backgroundWrapperProps={{
+                moveImage: cropperEnabled,
+                scaleImage: cropperEnabled,
+              }}
+              className="lanify-profile-cropper"
+              imageRestriction={ImageRestriction.none}
+              onChange={() => scheduleHistoryCommit()}
+              ref={cropperRef}
+              src={currentImageSrc}
+              stencilComponent={RectangleStencil}
+              stencilProps={{
+                aspectRatio: 1,
+                handlers: cropperEnabled,
+                lines: cropperEnabled,
+                movable: cropperEnabled,
+                overlayClassName: 'lanify-profile-cropper-overlay',
+                resizable: cropperEnabled,
+              }}
+              transitions={false}
+            />
+            {isRemovingBackground ? (
+              <Box
+                alignItems="center"
+                backdropFilter="blur(2px)"
+                bg="rgba(17,16,13,0.36)"
+                display="flex"
+                inset="0"
+                justifyContent="center"
+                pointerEvents="none"
+                position="absolute"
+                zIndex="1"
+              >
+                <Stack align="center" gap="3">
+                  <Spinner borderWidth="3px" color="white" size="xl" />
+                  <Text color="white" fontSize="sm" fontWeight="600">
+                    Updating cutout...
+                  </Text>
+                </Stack>
+              </Box>
+            ) : null}
+            <Button
+              onClick={() => {
+                clearHistoryCommitTimer()
+                setBackgroundError(null)
+                setEditorState(cloneEditorState(defaultState))
+                setActiveColorControl('brightness')
+                cropperRef.current?.reset()
+                setHistoryState({
+                  entries: [
+                    {
+                      cropperState: null,
+                      editorState: cloneEditorState(defaultState),
+                    },
+                  ],
+                  index: 0,
+                })
+
+                window.requestAnimationFrame(() => {
+                  scheduleHistoryCommit(cloneEditorState(defaultState))
+                })
+              }}
+              aria-label="Reset editor"
+              borderRadius="full"
+              bottom="4"
+              minW="0"
+              p="0"
+              position="absolute"
+              right="4"
+              size="lg"
+              variant="solid"
+              w="52px"
+              zIndex="2"
             >
-              <Accordion.Item value="crop">
-                <Accordion.ItemTrigger>
-                  <HStack flex="1" justify="space-between">
-                    <Stack gap="0" textAlign="left">
-                      <Text fontSize="sm" fontWeight="700" letterSpacing="0.12em" textTransform="uppercase">
-                        Crop
-                      </Text>
-                      <Text color="fg.muted" fontSize="xs">
-                        Framing, zoom, rotation, and flip.
-                      </Text>
-                    </Stack>
-                    <Accordion.ItemIndicator />
-                  </HStack>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent>
-                  <Accordion.ItemBody>
-                    <Stack gap="4">
-                      <Stack gap="3">
-                        <Text color="fg.muted" fontSize="sm">
-                          Drag the image to reposition it and pull the frame handles to crop and resize.
-                        </Text>
-                        <HStack gap="3">
-                          <Button onClick={() => zoomImage(0.9)} rounded="16px" variant="outline">
-                            Zoom Out
-                          </Button>
-                          <Button onClick={() => zoomImage(1.1)} rounded="16px" variant="outline">
-                            Zoom In
-                          </Button>
-                        </HStack>
-                        <Button
-                          onClick={() => {
-                            cropperRef.current?.reset()
-                            scheduleHistoryCommit()
-                          }}
-                          rounded="16px"
-                          variant="outline"
-                        >
-                          Reset Framing
-                        </Button>
-                      </Stack>
-                      <HStack gap="3">
-                        <Button
-                          onClick={() => applyRotation(rotation - 90)}
-                          rounded="16px"
-                          variant="outline"
-                        >
-                          Rotate Left
-                        </Button>
-                        <Button
-                          onClick={() => applyRotation(rotation + 90)}
-                          rounded="16px"
-                          variant="outline"
-                        >
-                          Rotate Right
-                        </Button>
-                      </HStack>
-                      <Button
-                        onClick={() => {
-                          cropperRef.current?.flipImage(true, false, {
-                            immediately: true,
-                            normalize: true,
-                            transitions: false,
-                          })
+              ↺
+            </Button>
+          </Box>
+
+          <Stack
+            bg="rgba(23,22,27,0.92)"
+            border="1px solid rgba(255,255,255,0.08)"
+            borderRadius="24px"
+            gap="3"
+            p={{ base: '3', md: '4' }}
+          >
+            <SegmentGroup.Root
+              bg="transparent"
+              border="none"
+              borderRadius="18px"
+              color="white"
+              onValueChange={({ value }) => setActiveTool(value as EditorTool)}
+              p="0"
+              value={activeTool}
+            >
+              <SegmentGroup.Indicator borderRadius="999px" />
+              <SegmentGroup.Items
+                items={editorToolItems.map((tool) => ({
+                  label: tool.shortLabel,
+                  value: tool.id,
+                }))}
+              />
+            </SegmentGroup.Root>
+            <HStack justify="center" gap="6" mt="-1">
+              {editorToolItems.map((tool) => (
+                <Text
+                  color={activeTool === tool.id ? 'white' : 'rgba(255,255,255,0.52)'}
+                  fontSize="xs"
+                  key={tool.id}
+                  letterSpacing="0.12em"
+                  textTransform="uppercase"
+                >
+                  {tool.label}
+                </Text>
+              ))}
+            </HStack>
+
+            {activeTool === 'crop' ? (
+              <Stack gap="3">
+                <HStack flexWrap="wrap" gap="2" justify="center">
+                  <Button onClick={() => zoomImage(0.9)} rounded="full" size="sm" variant="ghost">
+                    -
+                  </Button>
+                  <Button onClick={() => zoomImage(1.1)} rounded="full" size="sm" variant="ghost">
+                    +
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      cropperRef.current?.reset()
+                      scheduleHistoryCommit()
+                    }}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Frame
+                  </Button>
+                  <Button
+                    onClick={() => applyRotation(rotation - 90)}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    L
+                  </Button>
+                  <Button
+                    onClick={() => applyRotation(rotation + 90)}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    R
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      cropperRef.current?.flipImage(true, false, {
+                        immediately: true,
+                        normalize: true,
+                        transitions: false,
+                      })
+                      updateEditorState((current) => ({
+                        ...current,
+                        flipHorizontal: !current.flipHorizontal,
+                      }))
+                    }}
+                    rounded="full"
+                    size="sm"
+                    variant={flipHorizontal ? 'solid' : 'ghost'}
+                  >
+                    Flip
+                  </Button>
+                </HStack>
+                <Stack gap="3">
+                  <Text color="fg.muted" fontSize="xs" textAlign="center">
+                    Fine rotation
+                  </Text>
+                  <Input
+                    max="45"
+                    min="-45"
+                    onChange={(event) => applyRotation(Number(event.target.value))}
+                    type="range"
+                    value={rotation}
+                  />
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {isColorTool ? (
+              <Stack gap="3">
+                <HStack gap="2" justify="center">
+                  {colorControls.map((control) => (
+                    <Button
+                      key={control.stateKey}
+                      minW="0"
+                      onClick={() => setActiveColorControl(control.stateKey)}
+                      px="3"
+                      rounded="full"
+                      size="sm"
+                      variant={activeColorControl === control.stateKey ? 'solid' : 'ghost'}
+                    >
+                      {control.label.slice(0, 1)}
+                    </Button>
+                  ))}
+                </HStack>
+                <HStack justify="space-between">
+                  <Text fontSize="sm" fontWeight="600">
+                    {currentColorControl.label}
+                  </Text>
+                  <Text color="fg.muted" fontSize="xs">
+                    {currentColorControl.stateKey === 'brightness'
+                      ? brightness
+                      : currentColorControl.stateKey === 'contrast'
+                        ? contrast
+                        : currentColorControl.stateKey === 'saturate'
+                          ? saturate
+                          : grayscale}
+                  </Text>
+                </HStack>
+                <Input
+                  max={currentColorControl.max}
+                  min={currentColorControl.min}
+                  onChange={(event) => {
+                    const nextValue = Number(event.target.value)
+
+                    if (currentColorControl.stateKey === 'brightness') {
+                      updateEditorState((current) => ({
+                        ...current,
+                        brightness: nextValue,
+                      }))
+                    } else if (currentColorControl.stateKey === 'contrast') {
+                      updateEditorState((current) => ({
+                        ...current,
+                        contrast: nextValue,
+                      }))
+                    } else if (currentColorControl.stateKey === 'saturate') {
+                      updateEditorState((current) => ({
+                        ...current,
+                        saturate: nextValue,
+                      }))
+                    } else {
+                      updateEditorState((current) => ({
+                        ...current,
+                        grayscale: nextValue,
+                      }))
+                    }
+                  }}
+                  step={currentColorControl.step}
+                  type="range"
+                  value={
+                    currentColorControl.stateKey === 'brightness'
+                      ? brightness
+                      : currentColorControl.stateKey === 'contrast'
+                        ? contrast
+                        : currentColorControl.stateKey === 'saturate'
+                          ? saturate
+                          : grayscale
+                  }
+                />
+                <Text color="fg.muted" fontSize="xs" textAlign="center">
+                  {currentColorControl.helper}
+                </Text>
+              </Stack>
+            ) : null}
+
+            {activeTool === 'edge' ? (
+              <Stack gap="3">
+                <Stack gap="3">
+                  <Stack display="none" gap="2">
+                    <Text fontSize="sm" fontWeight="600">
+                      Model
+                    </Text>
+                    <NativeSelect.Root disabled={isRemovingBackground} size="sm" variant="subtle">
+                      <NativeSelect.Field
+                        onChange={(event) =>
                           updateEditorState((current) => ({
                             ...current,
-                            flipHorizontal: !current.flipHorizontal,
+                            rembgModel: event.currentTarget.value as RembgModel,
                           }))
-                        }}
-                        rounded="16px"
-                        variant={flipHorizontal ? 'solid' : 'outline'}
+                        }
+                        value={rembgModel}
                       >
-                        Flip Horizontally
-                      </Button>
-                      <Stack gap="3">
-                        <Text fontSize="sm">Fine rotation</Text>
-                        <Input
-                          max="45"
-                          min="-45"
-                          onChange={(event) => applyRotation(Number(event.target.value))}
-                          type="range"
-                          value={rotation}
-                        />
-                      </Stack>
-                    </Stack>
-                  </Accordion.ItemBody>
-                </Accordion.ItemContent>
-              </Accordion.Item>
-
-              <Accordion.Item value="color">
-                <Accordion.ItemTrigger>
-                  <HStack flex="1" justify="space-between">
-                    <Stack gap="0" textAlign="left">
-                      <Text fontSize="sm" fontWeight="700" letterSpacing="0.12em" textTransform="uppercase">
-                        Color
-                      </Text>
-                      <Text color="fg.muted" fontSize="xs">
-                        Brightness, contrast, saturation, and grayscale.
-                      </Text>
-                    </Stack>
-                    <Accordion.ItemIndicator />
-                  </HStack>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent>
-                  <Accordion.ItemBody>
-                    <Stack gap="4">
-                      <Text color="fg.muted" fontSize="sm">
-                        Fine-tune tone and color without changing the crop.
-                      </Text>
-                      <Stack gap="4">
-                        {colorControls.map((control) => (
-                          <Stack gap="2" key={control.stateKey}>
-                            <HStack justify="space-between">
-                              <Text fontSize="sm" fontWeight="600">
-                                {control.label}
-                              </Text>
-                              <Text color="fg.muted" fontSize="xs">
-                                {control.stateKey === 'brightness'
-                                  ? brightness
-                                  : control.stateKey === 'contrast'
-                                    ? contrast
-                                    : control.stateKey === 'saturate'
-                                      ? saturate
-                                      : grayscale}
-                              </Text>
-                            </HStack>
-                            <Input
-                              max={control.max}
-                              min={control.min}
-                              onChange={(event) => {
-                                const nextValue = Number(event.target.value)
-
-                                if (control.stateKey === 'brightness') {
-                                  updateEditorState((current) => ({
-                                    ...current,
-                                    brightness: nextValue,
-                                  }))
-                                } else if (control.stateKey === 'contrast') {
-                                  updateEditorState((current) => ({
-                                    ...current,
-                                    contrast: nextValue,
-                                  }))
-                                } else if (control.stateKey === 'saturate') {
-                                  updateEditorState((current) => ({
-                                    ...current,
-                                    saturate: nextValue,
-                                  }))
-                                } else {
-                                  updateEditorState((current) => ({
-                                    ...current,
-                                    grayscale: nextValue,
-                                  }))
-                                }
-                              }}
-                              step={control.step}
-                              type="range"
-                              value={
-                                control.stateKey === 'brightness'
-                                  ? brightness
-                                  : control.stateKey === 'contrast'
-                                    ? contrast
-                                    : control.stateKey === 'saturate'
-                                      ? saturate
-                                      : grayscale
-                              }
-                            />
-                            <Text color="fg.muted" fontSize="xs">
-                              {control.helper}
-                            </Text>
-                          </Stack>
+                        {rembgModelOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
                         ))}
-                      </Stack>
-                    </Stack>
-                  </Accordion.ItemBody>
-                </Accordion.ItemContent>
-              </Accordion.Item>
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  </Stack>
 
-              <Accordion.Item value="edge">
-                <Accordion.ItemTrigger>
-                  <HStack flex="1" justify="space-between">
-                    <Stack gap="0" textAlign="left">
-                      <Text fontSize="sm" fontWeight="700" letterSpacing="0.12em" textTransform="uppercase">
-                        Edge
-                      </Text>
-                      <Text color="fg.muted" fontSize="xs">
-                        Background removal and edge cleanup controls.
-                      </Text>
-                    </Stack>
-                    <Accordion.ItemIndicator />
-                  </HStack>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent>
-                  <Accordion.ItemBody>
-                    <Stack gap="4">
-                      <Text color="fg.muted" fontSize="sm">
-                        Match the tutorial flow, but keep your background cleanup controls here.
-                      </Text>
-                      <Stack gap="3">
-                        <Stack display="none" gap="2">
-                          <Text fontSize="sm" fontWeight="600">
-                            Model
-                          </Text>
-                          <NativeSelect.Root disabled={isRemovingBackground} size="sm" variant="subtle">
-                            <NativeSelect.Field
-                              onChange={(event) =>
-                                updateEditorState((current) => ({
-                                  ...current,
-                                  rembgModel: event.currentTarget.value as RembgModel,
-                                }))
-                              }
-                              value={rembgModel}
-                            >
-                              {rembgModelOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </NativeSelect.Field>
-                            <NativeSelect.Indicator />
-                          </NativeSelect.Root>
-                        </Stack>
+                  <Stack gap="2">
+                    <Text fontSize="sm" fontWeight="600">
+                      Edge Refinement
+                    </Text>
+                    <SegmentGroup.Root
+                      disabled={isRemovingBackground}
+                      onValueChange={({ value }) =>
+                        updateEditorState((current) => ({
+                          ...current,
+                          rembgEdgePreset: value as RembgEdgePreset,
+                        }))
+                      }
+                      size="sm"
+                      value={rembgEdgePreset}
+                    >
+                      <SegmentGroup.Indicator />
+                      <SegmentGroup.Items
+                        items={edgePresetOptions.map((option) => ({
+                          label: option.label,
+                          value: option.value,
+                        }))}
+                      />
+                    </SegmentGroup.Root>
+                    <Text color="fg.muted" fontSize="xs">
+                      `Off` keeps the model&apos;s raw mask. `Sharp` cuts tighter edges. `Soft`
+                      keeps more feathering around hair and natural contours.
+                    </Text>
+                  </Stack>
 
-                        <Stack gap="2">
-                          <Text fontSize="sm" fontWeight="600">
-                            Edge Refinement
-                          </Text>
-                          <SegmentGroup.Root
-                            disabled={isRemovingBackground}
-                            onValueChange={({ value }) =>
-                              updateEditorState((current) => ({
-                                ...current,
-                                rembgEdgePreset: value as RembgEdgePreset,
-                              }))
-                            }
-                            size="sm"
-                            value={rembgEdgePreset}
-                          >
-                            <SegmentGroup.Indicator />
-                            <SegmentGroup.Items
-                              items={edgePresetOptions.map((option) => ({
-                                label: option.label,
-                                value: option.value,
-                              }))}
-                            />
-                          </SegmentGroup.Root>
-                          <Text color="fg.muted" fontSize="xs">
-                            `Off` keeps the model&apos;s raw mask. `Sharp` cuts tighter edges. `Soft`
-                            keeps more feathering around hair and natural contours.
-                          </Text>
-                        </Stack>
-
-                        <Switch.Root
-                          checked={maskCleanup}
-                          colorPalette="primary"
-                          disabled={isRemovingBackground}
-                          onCheckedChange={(event) =>
-                            updateEditorState((current) => ({
-                              ...current,
-                              maskCleanup: event.checked,
-                            }))
-                          }
-                        >
-                          <Switch.HiddenInput />
-                          <Switch.Control />
-                          <Switch.Label>Mask cleanup</Switch.Label>
-                        </Switch.Root>
-                      </Stack>
-                      <Text color="fg.muted" fontSize="sm">
-                        Background removal runs automatically when the editor opens and whenever these
-                        settings change.
-                      </Text>
-                      {backgroundError ? (
-                        <Alert.Root status="error">
-                          <Alert.Indicator />
-                          <Alert.Content>
-                            <Alert.Title>Error!</Alert.Title>
-                            <Alert.Description>{backgroundError}</Alert.Description>
-                          </Alert.Content>
-                        </Alert.Root>
-                      ) : null}
-                      {!transparentPreviewSrc && !isRemovingBackground ? (
-                        <Text color="fg.muted" fontSize="sm">
-                          Upload an image first to generate the cutout.
-                        </Text>
-                      ) : null}
-                    </Stack>
-                  </Accordion.ItemBody>
-                </Accordion.ItemContent>
-              </Accordion.Item>
-            </Accordion.Root>
+                  <Switch.Root
+                    checked={maskCleanup}
+                    colorPalette="primary"
+                    disabled={isRemovingBackground}
+                    onCheckedChange={(event) =>
+                      updateEditorState((current) => ({
+                        ...current,
+                        maskCleanup: event.checked,
+                      }))
+                    }
+                  >
+                    <Switch.HiddenInput />
+                    <Switch.Control />
+                    <Switch.Label>Mask cleanup</Switch.Label>
+                  </Switch.Root>
+                </Stack>
+                <Text color="fg.muted" fontSize="xs">
+                  Background removal runs automatically when the editor opens and whenever these
+                  settings change.
+                </Text>
+                {backgroundError ? (
+                  <Alert.Root status="error">
+                    <Alert.Indicator />
+                    <Alert.Content>
+                      <Alert.Title>Error!</Alert.Title>
+                      <Alert.Description>{backgroundError}</Alert.Description>
+                    </Alert.Content>
+                  </Alert.Root>
+                ) : null}
+                {!transparentPreviewSrc && !isRemovingBackground ? (
+                  <Text color="fg.muted" fontSize="sm">
+                    Upload an image first to generate the cutout.
+                  </Text>
+                ) : null}
+              </Stack>
+            ) : null}
           </Stack>
-        </HStack>
+        </Stack>
 
         <HStack justify="space-between">
           <HStack gap="3">
             <Button
               disabled={!canUndo}
-              onClick={() => {
-                if (!canUndo) {
-                  return
-                }
-
-                const nextIndex = historyState.index - 1
-                const nextEntry = historyState.entries[nextIndex]
-
-                if (!nextEntry) {
-                  return
-                }
-
-                setHistoryState((current) => ({
-                  ...current,
-                  index: nextIndex,
-                }))
-                restoreHistoryEntry(nextEntry)
-              }}
+              onClick={handleUndo}
               variant="ghost"
             >
               Undo
             </Button>
             <Button
               disabled={!canRedo}
-              onClick={() => {
-                if (!canRedo) {
-                  return
-                }
-
-                const nextIndex = historyState.index + 1
-                const nextEntry = historyState.entries[nextIndex]
-
-                if (!nextEntry) {
-                  return
-                }
-
-                setHistoryState((current) => ({
-                  ...current,
-                  index: nextIndex,
-                }))
-                restoreHistoryEntry(nextEntry)
-              }}
+              onClick={handleRedo}
               variant="ghost"
             >
               Redo

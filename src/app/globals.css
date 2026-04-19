@@ -41,6 +41,10 @@ body > div:first-child {
 
 .lanify-profile-cropper {
   height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  min-height: 0;
+  min-width: 0;
   width: 100%;
 }
 
@@ -54,4 +58,16 @@ body > div:first-child {
 
 .advanced-cropper {
   background: transparent;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.advanced-cropper-boundary,
+.advanced-cropper-boundary__content {
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
 }
