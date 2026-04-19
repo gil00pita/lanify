@@ -10,6 +10,7 @@ import {
   Input,
   NativeSelect,
   SegmentGroup,
+  Spinner,
   Stack,
   Switch,
   Text,
@@ -471,6 +472,26 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 }}
                 transitions={false}
               />
+              {isRemovingBackground ? (
+                <Box
+                  alignItems="center"
+                  backdropFilter="blur(2px)"
+                  bg="rgba(17,16,13,0.36)"
+                  display="flex"
+                  inset="0"
+                  justifyContent="center"
+                  pointerEvents="none"
+                  position="absolute"
+                  zIndex="1"
+                >
+                  <Stack align="center" gap="3">
+                    <Spinner borderWidth="3px" color="white" size="xl" />
+                    <Text color="white" fontSize="sm" fontWeight="600">
+                      Updating cutout...
+                    </Text>
+                  </Stack>
+                </Box>
+              ) : null}
             </Box>
           </Stack>
 
@@ -501,8 +522,13 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     <Text fontSize="sm" fontWeight="600">
                       Model
                     </Text>
-                    <NativeSelect.Root size="sm" variant="subtle">
+                    <NativeSelect.Root
+                      disabled={isRemovingBackground}
+                      size="sm"
+                      variant="subtle"
+                    >
                       <NativeSelect.Field
+                        disabled={isRemovingBackground}
                         value={rembgModel}
                         onChange={(event) => setRembgModel(event.currentTarget.value as RembgModel)}
                       >
@@ -521,6 +547,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                       Edge Refinement
                     </Text>
                     <SegmentGroup.Root
+                      disabled={isRemovingBackground}
                       size="sm"
                       value={rembgEdgePreset}
                       onValueChange={({ value }) => setRembgEdgePreset(value as RembgEdgePreset)}
@@ -542,6 +569,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   <Switch.Root
                     checked={maskCleanup}
                     colorPalette="primary"
+                    disabled={isRemovingBackground}
                     onCheckedChange={(event) => setMaskCleanup(event.checked)}
                   >
                     <Switch.HiddenInput />
@@ -553,17 +581,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   Background removal runs automatically when the editor opens and whenever these
                   settings change.
                 </Text>
-                {isRemovingBackground ? (
-                  <Alert.Root status="info">
-                    <Alert.Indicator />
-                    <Alert.Content>
-                      <Alert.Title>Updating cutout...</Alert.Title>
-                      <Alert.Description>
-                        Re-processing the original image with your latest settings.
-                      </Alert.Description>
-                    </Alert.Content>
-                  </Alert.Root>
-                ) : null}
                 {backgroundError ? (
                   <Alert.Root status={'error'}>
                     <Alert.Indicator />
