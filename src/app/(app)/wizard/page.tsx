@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Alert, Box, Button, Grid, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
+import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-modal'
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
 import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
@@ -97,7 +98,9 @@ export default function WizardPage() {
   const activeDraft = useAppStore((state) => state.activeDraft)
   const setWizardStep = useAppStore((state) => state.setWizardStep)
   const updateProfile = useAppStore((state) => state.updateProfile)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
   const hasProfilePicture = Boolean(profile.avatarTransparentUrl ?? profile.avatarUrl)
+  const previewImage = profile.avatarTransparentUrl ?? profile.avatarUrl
 
   useEffect(() => {
     if (!activeDraft) {
@@ -158,7 +161,7 @@ export default function WizardPage() {
             <Alert.Title>Make sure the background is transparent.</Alert.Title>
           </Alert.Root>
 
-          <ProfileReviewForm />
+          <ProfileReviewForm onRequestOpenEditor={() => setIsEditorOpen(true)} />
 
           <VStack justify="space-between" mt="4">
             <Text color="fg.muted" fontSize="sm">
@@ -187,6 +190,22 @@ export default function WizardPage() {
           </VStack>
         </Stack>
       </Box>
+
+      {previewImage ? (
+        <ProfileImageEditorModal
+          imageSrc={previewImage}
+          isOpen={isEditorOpen}
+          onClose={() => setIsEditorOpen(false)}
+          onSave={(editedImage) =>
+            updateProfile((current) => ({
+              ...current,
+              avatarTransparentUrl: editedImage,
+            }))
+          }
+          originalImageSrc={profile.avatarUrl}
+          transparentImageSrc={profile.avatarTransparentUrl}
+        />
+      ) : null}
     </Box>
   )
 }

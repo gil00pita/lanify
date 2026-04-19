@@ -51,3 +51,7 @@ body > div:first-child {
 .lanify-adjustable-image-source {
   display: none;
 }
+
+.advanced-cropper {
+  background: transparent;
+}

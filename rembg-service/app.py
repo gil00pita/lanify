@@ -1,11 +1,14 @@
+from collections import OrderedDict
+from hashlib import sha256
 from io import BytesIO
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageOps
 from rembg import new_session, remove
 
 
+CACHE_SCHEMA_VERSION = "v2"
 EDGE_PRESET_OPTIONS = {
     "off": {
         "alpha_matting": False,
@@ -33,7 +36,9 @@ EDGE_PRESET_OPTIONS = {
     },
 }
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
+MAX_RESULT_CACHE_ENTRIES = 24
 MODEL_SESSIONS = {}
+RESULT_CACHE = OrderedDict()
 SUPPORTED_MODELS = {"birefnet-portrait", "u2net_human_seg", "u2net"}
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
@@ -50,6 +55,35 @@ def get_session(model_name: str):
     return session
 
 
+def build_cache_key(contents: bytes, edge_preset: str, model_name: str, post_process_mask: str) -> str:
+    digest = sha256()
+    digest.update(CACHE_SCHEMA_VERSION.encode("utf-8"))
+    digest.update(contents)
+    digest.update(edge_preset.encode("utf-8"))
+    digest.update(model_name.encode("utf-8"))
+    digest.update(post_process_mask.encode("utf-8"))
+
+    return digest.hexdigest()
+
+
+def get_cached_result(cache_key: str) -> bytes | None:
+    cached = RESULT_CACHE.get(cache_key)
+
+    if cached is None:
+        return None
+
+    RESULT_CACHE.move_to_end(cache_key)
+    return cached
+
+
+def store_cached_result(cache_key: str, result: bytes) -> None:
+    RESULT_CACHE[cache_key] = result
+    RESULT_CACHE.move_to_end(cache_key)
+
+    if len(RESULT_CACHE) > MAX_RESULT_CACHE_ENTRIES:
+        RESULT_CACHE.popitem(last=False)
+
+
 def refine_edges(image_bytes: bytes, edge_preset: str) -> bytes:
     if edge_preset == "off":
         return image_bytes
@@ -58,12 +92,20 @@ def refine_edges(image_bytes: bytes, edge_preset: str) -> bytes:
     alpha = image.getchannel("A")
 
     if edge_preset == "sharp":
-        alpha = alpha.filter(ImageFilter.MinFilter(5))
-        alpha = alpha.point(lambda value: 255 if value >= 210 else 0)
+        alpha = alpha.filter(ImageFilter.MinFilter(3))
+        alpha = ImageOps.autocontrast(alpha)
+        alpha = alpha.point(
+            lambda value: 0 if value < 72 else 255 if value > 180 else min(255, int((value - 72) * 2.4))
+        )
     elif edge_preset == "balanced":
-        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=1.25))
+        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=1.5))
+        alpha = ImageOps.autocontrast(alpha, cutoff=1)
+        alpha = alpha.point(
+            lambda value: 0 if value < 36 else 255 if value > 236 else value
+        )
     elif edge_preset == "soft":
-        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=3.5))
+        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=4.5))
+        alpha = alpha.point(lambda value: int(value * 0.88) if value < 224 else value)
 
     image.putalpha(alpha)
     output = BytesIO()
@@ -101,6 +143,12 @@ async def remove_background(
     if len(contents) > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(status_code=413, detail="Use an image smaller than 10MB.")
 
+    cache_key = build_cache_key(contents, edgePreset, model, postProcessMask)
+    cached_output = get_cached_result(cache_key)
+
+    if cached_output is not None:
+        return Response(content=cached_output, media_type="image/png")
+
     try:
         output = remove(
             contents,
@@ -115,4 +163,5 @@ async def remove_background(
             status_code=500,
         )
 
+    store_cached_result(cache_key, output)
     return Response(content=output, media_type="image/png")

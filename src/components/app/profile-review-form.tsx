@@ -2,16 +2,35 @@
 
 import { ChangeEvent, useRef, useState } from 'react'
 
-import { Box, Button, HStack, Image, Input, Stack } from '@chakra-ui/react'
+import { Alert, Box, Button, HStack, Image, Input, Stack } from '@chakra-ui/react'
 
-import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-modal'
 import { useAppStore } from '@/store/app-store'
 
-export function ProfileReviewForm() {
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
+const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
+const SUPPORTED_IMAGE_ACCEPT = '.jpg,.jpeg,.png,.webp'
+
+function isCompatibleImageFile(file: File) {
+  const normalizedName = file.name.toLowerCase()
+  const hasSupportedExtension = SUPPORTED_IMAGE_EXTENSIONS.some((extension) =>
+    normalizedName.endsWith(extension)
+  )
+  const hasSupportedType = file.type ? SUPPORTED_IMAGE_TYPES.has(file.type) : hasSupportedExtension
+
+  return hasSupportedExtension && hasSupportedType
+}
+
+type ProfileReviewFormProps = {
+  onRequestOpenEditor: () => void
+}
+
+export function ProfileReviewForm(props: ProfileReviewFormProps) {
+  const { onRequestOpenEditor } = props
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const profile = useAppStore((state) => state.profile)
   const updateProfile = useAppStore((state) => state.updateProfile)
-  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const hasProfilePicture = Boolean(profile.avatarTransparentUrl ?? profile.avatarUrl)
   const previewImage = profile.avatarTransparentUrl ?? profile.avatarUrl
 
@@ -22,6 +41,19 @@ export function ProfileReviewForm() {
       return
     }
 
+    if (!isCompatibleImageFile(file)) {
+      setUploadError('Use a JPG, PNG, or WebP image.')
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setUploadError('Use an image smaller than 10MB.')
+      event.target.value = ''
+      return
+    }
+
+    setUploadError(null)
     const reader = new FileReader()
     reader.onload = () => {
       const result = typeof reader.result === 'string' ? reader.result : null
@@ -35,7 +67,7 @@ export function ProfileReviewForm() {
         avatarTransparentUrl: null,
         avatarUrl: result,
       }))
-      setIsEditorOpen(true)
+      onRequestOpenEditor()
       event.target.value = ''
     }
     reader.readAsDataURL(file)
@@ -67,10 +99,12 @@ export function ProfileReviewForm() {
           {previewImage ? (
             <Image
               alt={profile.displayName}
-              h="250px"
-              w="250px"
-              objectFit="cover"
+              h="100%"
+              maxH="100%"
+              maxW="100%"
+              objectFit="contain"
               src={previewImage}
+              w="100%"
             />
           ) : (
             <Box
@@ -91,13 +125,21 @@ export function ProfileReviewForm() {
         </Box>
 
         <Input
-          accept="image/*"
+          accept={SUPPORTED_IMAGE_ACCEPT}
           display="none"
           onChange={handleUpload}
           ref={fileInputRef}
           type="file"
         />
         <Stack gap="3" w="full">
+          {uploadError ? (
+            <Alert.Root status="error">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{uploadError}</Alert.Description>
+              </Alert.Content>
+            </Alert.Root>
+          ) : null}
           <HStack gap="3" w="full">
             <Button
               rounded="full"
@@ -127,7 +169,7 @@ export function ProfileReviewForm() {
             <Button
               rounded="full"
               w={'full'}
-              onClick={() => setIsEditorOpen(true)}
+              onClick={onRequestOpenEditor}
               variant="surface"
             >
               Edit Current Picture
@@ -135,22 +177,6 @@ export function ProfileReviewForm() {
           ) : null}
         </Stack>
       </Stack>
-
-      {previewImage ? (
-        <ProfileImageEditorModal
-          imageSrc={previewImage}
-          isOpen={isEditorOpen}
-          onClose={() => setIsEditorOpen(false)}
-          onSave={(editedImage) =>
-            updateProfile((current) => ({
-              ...current,
-              avatarTransparentUrl: editedImage,
-            }))
-          }
-          originalImageSrc={profile.avatarUrl}
-          transparentImageSrc={profile.avatarTransparentUrl}
-        />
-      ) : null}
     </HStack>
   )
 }
