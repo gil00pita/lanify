@@ -109,13 +109,15 @@ export default function WizardPage() {
   }, [activeDraft, createNewDraft])
 
   return (
-    <Box minH="calc(100vh - 220px)" overflow="hidden" position="relative" width="100vw">
+    <Box minH="100vh" overflow="hidden" position="relative" width="100vw">
       <Grid
+        height={'100vh'}
         filter="blur(2px)"
         gap={{ base: '4', md: '8' }}
         opacity="0.92"
         p={{ base: '6', md: '10' }}
-        templateColumns={{ base: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }}
+        templateColumns={{ base: 'repeat(4, 1fr)', lg: 'repeat(10, 1fr)' }}
+        templateRows={{ base: 'repeat(3, 1fr)' }}
       >
         {sampleCards.map((card, index) => (
           <BackgroundSampleCard
@@ -152,13 +154,9 @@ export default function WizardPage() {
             {profile.role}
           </Text>
 
-          <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="400" mt="1" color={'fg'}>
-            Please confirm your profile picture.
-          </Text>
-
-          <Alert.Root status="info" inline size={'sm'}>
+          <Alert.Root status="info" inline size={'sm'} mt="4" maxW={"250px"}>
             <Alert.Indicator />
-            <Alert.Title>Make sure the background is transparent.</Alert.Title>
+            <Alert.Title>Make sure the background is simple and with uniform color.</Alert.Title>
           </Alert.Root>
 
           <ProfileReviewForm onRequestOpenEditor={() => setIsEditorOpen(true)} />

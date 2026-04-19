@@ -1,15 +1,13 @@
 'use client'
 
-import { Button, HStack, Text, Stack, Box, Icon } from '@chakra-ui/react'
+import { Button, HStack, Text, Stack, Icon } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { VariationGallery } from '@/components/app/variation-gallery'
-import { useAppStore } from '@/store/app-store'
 import { frostedGlass } from '@/lib/ui-tokens'
 
 export default function GalleryPage() {
   const router = useRouter()
-  const setWizardStep = useAppStore((state) => state.setWizardStep)
 
   return (
     <Stack gap="0" position={'relative'}>

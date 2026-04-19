@@ -14,25 +14,29 @@ interface DesiredCropperRef {
 }
 
 interface Props {
-  className?: string;
   cropper: DesiredCropperRef;
   crossOrigin?: "anonymous" | "use-credentials" | boolean;
   brightness?: number;
   saturation?: number;
   hue?: number;
+  grayscale?: number;
   contrast?: number;
+  outlineColor?: string;
+  outlineWidth?: number;
 }
 
 export const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, Props>(
   (
     {
-      className,
       cropper,
       crossOrigin,
       brightness = 0,
       saturation = 0,
       hue = 0,
-      contrast = 0
+      grayscale = 0,
+      contrast = 0,
+      outlineColor,
+      outlineWidth = 0
     }: Props,
     ref
   ) => {
@@ -50,9 +54,11 @@ export const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, Props>(
         brightness={brightness}
         saturation={saturation}
         hue={hue}
+        grayscale={grayscale}
         contrast={contrast}
+        outlineColor={outlineColor}
+        outlineWidth={outlineWidth}
         ref={ref}
-        className={className}
         style={style}
       />
     );

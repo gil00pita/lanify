@@ -1,6 +1,6 @@
 'use client'
 
-import { CSSProperties, forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   Alert,
@@ -16,16 +16,17 @@ import {
   Text,
 } from '@chakra-ui/react'
 import {
-  Cropper,
-  CropperImage,
   CropperRef,
   CropperState,
-  CropperTransitions,
   ImageRestriction,
   RectangleStencil,
-  getBackgroundStyle,
-  mergeRefs,
 } from 'react-advanced-cropper'
+
+import { ImageEditorCanvas } from '@/components/app/ImageEditor'
+import {
+  Navigation,
+  type EditorMode as ImageNavigationMode,
+} from '@/components/app/ImageEditor/Navigation'
 
 type EditorTool = 'crop' | 'color' | 'edge'
 type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
@@ -37,6 +38,7 @@ type EditorState = {
   flipHorizontal: boolean
   grayscale: number
   maskCleanup: boolean
+  outlineEnabled: boolean
   rembgEdgePreset: RembgEdgePreset
   rembgModel: RembgModel
   rotation: number
@@ -63,6 +65,7 @@ const defaultState: EditorState = {
   flipHorizontal: false,
   grayscale: 0,
   maskCleanup: false,
+  outlineEnabled: false,
   rembgEdgePreset: 'off',
   rembgModel: 'u2net_human_seg',
   rotation: 0,
@@ -70,6 +73,8 @@ const defaultState: EditorState = {
 }
 
 const HISTORY_LIMIT = 60
+const OUTLINE_COLOR = '#ffffff'
+const OUTLINE_WIDTH = 10
 
 const rembgModelOptions: Array<{ label: string; value: RembgModel }> = [
   { label: 'Human Segmentation', value: 'u2net_human_seg' },
@@ -122,131 +127,29 @@ const colorControls: Array<{
   },
 ]
 
-const editorToolItems: Array<{ id: EditorTool; label: string; shortLabel: string }> = [
-  { id: 'crop', label: 'Crop', shortLabel: '[]' },
-  { id: 'color', label: 'Color', shortLabel: 'o' },
-  { id: 'edge', label: 'Edge', shortLabel: '()' },
-]
+function colorControlToNavigationMode(
+  value: 'brightness' | 'contrast' | 'saturate' | 'grayscale'
+): ImageNavigationMode {
+  if (value === 'saturate') {
+    return 'saturation'
+  }
 
-type AdjustmentProps = {
-  brightness?: number
-  contrast?: number
-  grayscale?: number
-  saturate?: number
+  return value
 }
 
-type AdjustableImageProps = AdjustmentProps & {
-  className?: string
-  crossOrigin?: 'anonymous' | 'use-credentials' | boolean
-  src?: string
-  style?: CSSProperties
+function navigationModeToColorControl(
+  value: ImageNavigationMode
+): 'brightness' | 'contrast' | 'saturate' | 'grayscale' {
+  if (value === 'saturation') {
+    return 'saturate'
+  }
+
+  if (value === 'brightness' || value === 'contrast' || value === 'grayscale') {
+    return value
+  }
+
+  return 'brightness'
 }
-
-const AdjustableImage = forwardRef<HTMLCanvasElement, AdjustableImageProps>(
-  function AdjustableImage(props, ref) {
-    const {
-      brightness = 100,
-      className,
-      contrast = 100,
-      crossOrigin,
-      grayscale = 0,
-      saturate = 100,
-      src,
-      style,
-    } = props
-    const imageRef = useRef<HTMLImageElement | null>(null)
-    const canvasRef = useRef<HTMLCanvasElement | null>(null)
-
-    function drawImage() {
-      const image = imageRef.current
-      const canvas = canvasRef.current
-
-      if (!canvas || !image || !image.complete) {
-        return
-      }
-
-      const context = canvas.getContext('2d')
-
-      if (!context) {
-        return
-      }
-
-      canvas.width = image.naturalWidth
-      canvas.height = image.naturalHeight
-      context.clearRect(0, 0, canvas.width, canvas.height)
-      context.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) grayscale(${grayscale}%)`
-      context.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight)
-    }
-
-    useLayoutEffect(() => {
-      drawImage()
-    }, [brightness, contrast, grayscale, saturate, src])
-
-    return (
-      <>
-        <canvas
-          className={className}
-          key={`${src ?? 'empty'}-canvas`}
-          ref={mergeRefs([ref, canvasRef])}
-          style={style}
-        />
-        {src ? (
-          <img
-            alt=""
-            className="lanify-adjustable-image-source"
-            crossOrigin={crossOrigin === true ? 'anonymous' : crossOrigin || undefined}
-            key={`${src}-image`}
-            onLoad={drawImage}
-            ref={imageRef}
-            src={src}
-          />
-        ) : null}
-      </>
-    )
-  }
-)
-
-type AdjustableCropperBackgroundProps = AdjustmentProps & {
-  className?: string
-  cropper: {
-    getImage: () => CropperImage | null
-    getState: () => CropperState | null
-    getTransitions: () => CropperTransitions | null
-  }
-  crossOrigin?: 'anonymous' | 'use-credentials' | boolean
-}
-
-const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, AdjustableCropperBackgroundProps>(
-  function AdjustableCropperBackground(props, ref) {
-    const {
-      brightness = 100,
-      className,
-      contrast = 100,
-      cropper,
-      crossOrigin,
-      grayscale = 0,
-      saturate = 100,
-    } = props
-    const image = cropper.getImage()
-    const state = cropper.getState()
-    const transitions = cropper.getTransitions()
-    const style = image && state ? getBackgroundStyle(image, state, transitions) : {}
-
-    return (
-      <AdjustableImage
-        brightness={brightness}
-        className={className}
-        contrast={contrast}
-        crossOrigin={crossOrigin}
-        grayscale={grayscale}
-        ref={ref}
-        saturate={saturate}
-        src={image?.src}
-        style={style}
-      />
-    )
-  }
-)
 
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -314,6 +217,59 @@ async function removeBackground(
   return blobToDataUrl(blob)
 }
 
+function createOutlinedCanvas(
+  sourceCanvas: HTMLCanvasElement,
+  options: {
+    strokeColor: string
+    strokeWidth: number
+  }
+) {
+  const { strokeColor, strokeWidth } = options
+  const outputCanvas = document.createElement('canvas')
+  outputCanvas.width = sourceCanvas.width
+  outputCanvas.height = sourceCanvas.height
+
+  const outputContext = outputCanvas.getContext('2d')
+
+  if (!outputContext) {
+    return sourceCanvas
+  }
+
+  const maskCanvas = document.createElement('canvas')
+  maskCanvas.width = sourceCanvas.width
+  maskCanvas.height = sourceCanvas.height
+
+  const maskContext = maskCanvas.getContext('2d')
+
+  if (!maskContext) {
+    return sourceCanvas
+  }
+
+  maskContext.drawImage(sourceCanvas, 0, 0)
+  maskContext.globalCompositeOperation = 'source-in'
+  maskContext.fillStyle = strokeColor
+  maskContext.fillRect(0, 0, maskCanvas.width, maskCanvas.height)
+  maskContext.globalCompositeOperation = 'source-over'
+
+  for (let offsetX = -strokeWidth; offsetX <= strokeWidth; offsetX += 1) {
+    for (let offsetY = -strokeWidth; offsetY <= strokeWidth; offsetY += 1) {
+      if (offsetX === 0 && offsetY === 0) {
+        continue
+      }
+
+      if (Math.hypot(offsetX, offsetY) > strokeWidth) {
+        continue
+      }
+
+      outputContext.drawImage(maskCanvas, offsetX, offsetY)
+    }
+  }
+
+  outputContext.drawImage(sourceCanvas, 0, 0)
+
+  return outputCanvas
+}
+
 function cloneEditorState(state: EditorState): EditorState {
   return { ...state }
 }
@@ -358,6 +314,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const flipHorizontal = editorState.flipHorizontal
   const grayscale = editorState.grayscale
   const maskCleanup = editorState.maskCleanup
+  const outlineEnabled = editorState.outlineEnabled
   const rembgEdgePreset = editorState.rembgEdgePreset
   const rembgModel = editorState.rembgModel
   const rotation = editorState.rotation
@@ -669,6 +626,12 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const currentImageSrc = transparentPreviewSrc ?? processingSourceImage
   const cropperEnabled = activeTool === 'crop'
   const isColorTool = activeTool === 'color'
+  const navigationMode =
+    activeTool === 'crop'
+      ? 'crop'
+      : activeTool === 'color'
+        ? colorControlToNavigationMode(activeColorControl)
+        : undefined
   const currentColorControl =
     colorControls.find((control) => control.stateKey === activeColorControl) ?? colorControls[0]
 
@@ -697,7 +660,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
         maxW="1200px"
         onClick={(event) => event.stopPropagation()}
         p={{ base: '5', md: '7' }}
-        w="full"
       >
         <HStack justify="space-between">
           <Stack gap="1">
@@ -733,53 +695,70 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
         </HStack>
 
         <Stack gap="4">
-          <Box
-            aspectRatio={1}
-            bg="black"
-            backgroundColor="var(--lanify-colors-bg)"
-            backgroundPosition="0 0, 10px 10px"
-            backgroundSize="20px 20px"
-            bgImage={[
-              'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, transparent 25%, transparent 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
-              'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, var(--lanify-colors-bg) 25%, var(--lanify-colors-bg) 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
-            ].join(', ')}
-            border="1px solid rgba(255,255,255,0.08)"
-            borderRadius="24px"
-            flexShrink={0}
-            maxW="540px"
-            mx="auto"
-            overflow="hidden"
-            position="relative"
-            w={{ base: 'min(100%, 420px)', md: '540px' }}
-          >
-            <Cropper
-              backgroundComponent={AdjustableCropperBackground}
-              backgroundProps={{
-                brightness,
-                contrast,
-                grayscale,
-                saturate,
-              }}
-              backgroundWrapperProps={{
-                moveImage: cropperEnabled,
-                scaleImage: cropperEnabled,
-              }}
-              className="lanify-profile-cropper"
-              imageRestriction={ImageRestriction.none}
-              onChange={() => scheduleHistoryCommit()}
-              ref={cropperRef}
-              src={currentImageSrc}
-              stencilComponent={RectangleStencil}
-              stencilProps={{
+          <ImageEditorCanvas
+            adjustments={{
+              brightness: (brightness - 100) / 100,
+              contrast: (contrast - 100) / 100,
+              grayscale,
+              hue: 0,
+              outlineColor: outlineEnabled ? OUTLINE_COLOR : undefined,
+              outlineWidth: outlineEnabled ? OUTLINE_WIDTH : 0,
+              saturation: (saturate - 100) / 100,
+            }}
+            containerProps={{
+              aspectRatio: 1,
+              backgroundColor: 'var(--lanify-colors-bg)',
+              backgroundPosition: '0 0, 10px 10px',
+              backgroundSize: '20px 20px',
+              bgImage: [
+                'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, transparent 25%, transparent 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
+                'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, var(--lanify-colors-bg) 25%, var(--lanify-colors-bg) 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
+              ].join(', '),
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '24px',
+              flexShrink: 0,
+              maxW: '540px',
+              mx: 'auto',
+              overflow: 'hidden',
+              w: { base: 'min(100%, 420px)', md: '540px' },
+            }}
+            cropperEnabled={cropperEnabled}
+            cropperProps={{
+              className: 'lanify-profile-cropper',
+              imageRestriction: ImageRestriction.none,
+              onChange: () => scheduleHistoryCommit(),
+              stencilComponent: RectangleStencil,
+              stencilProps: {
                 aspectRatio: 1,
-                handlers: cropperEnabled,
-                lines: cropperEnabled,
-                movable: cropperEnabled,
                 overlayClassName: 'lanify-profile-cropper-overlay',
-                resizable: cropperEnabled,
-              }}
-              transitions={false}
-            />
+              },
+              transitions: false,
+            }}
+            cropperRef={cropperRef}
+            onReset={() => {
+              clearHistoryCommitTimer()
+              setBackgroundError(null)
+              setEditorState(cloneEditorState(defaultState))
+              setActiveColorControl('brightness')
+              cropperRef.current?.reset()
+              setHistoryState({
+                entries: [
+                  {
+                    cropperState: null,
+                    editorState: cloneEditorState(defaultState),
+                  },
+                ],
+                index: 0,
+              })
+
+              window.requestAnimationFrame(() => {
+                scheduleHistoryCommit(cloneEditorState(defaultState))
+              })
+            }}
+            resetButtonVisible
+            showPreview={false}
+            src={currentImageSrc}
+          >
             {isRemovingBackground ? (
               <Box
                 alignItems="center"
@@ -800,79 +779,48 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 </Stack>
               </Box>
             ) : null}
-            <Button
-              onClick={() => {
-                clearHistoryCommitTimer()
-                setBackgroundError(null)
-                setEditorState(cloneEditorState(defaultState))
-                setActiveColorControl('brightness')
-                cropperRef.current?.reset()
-                setHistoryState({
-                  entries: [
-                    {
-                      cropperState: null,
-                      editorState: cloneEditorState(defaultState),
-                    },
-                  ],
-                  index: 0,
-                })
-
-                window.requestAnimationFrame(() => {
-                  scheduleHistoryCommit(cloneEditorState(defaultState))
-                })
-              }}
-              aria-label="Reset editor"
-              borderRadius="full"
-              bottom="4"
-              minW="0"
-              p="0"
-              position="absolute"
-              right="4"
-              size="lg"
-              variant="solid"
-              w="52px"
-              zIndex="2"
-            >
-              ↺
-            </Button>
-          </Box>
+          </ImageEditorCanvas>
 
           <Stack
-            bg="rgba(23,22,27,0.92)"
-            border="1px solid rgba(255,255,255,0.08)"
+            bg="bg"
+            border="1px solid {colors.border}"
             borderRadius="24px"
             gap="3"
+            overflow="hidden"
             p={{ base: '3', md: '4' }}
+            className="image-controls"
           >
-            <SegmentGroup.Root
-              bg="transparent"
-              border="none"
-              borderRadius="18px"
-              color="white"
-              onValueChange={({ value }) => setActiveTool(value as EditorTool)}
-              p="0"
-              value={activeTool}
-            >
-              <SegmentGroup.Indicator borderRadius="999px" />
-              <SegmentGroup.Items
-                items={editorToolItems.map((tool) => ({
-                  label: tool.shortLabel,
-                  value: tool.id,
-                }))}
-              />
-            </SegmentGroup.Root>
-            <HStack justify="center" gap="6" mt="-1">
-              {editorToolItems.map((tool) => (
-                <Text
-                  color={activeTool === tool.id ? 'white' : 'rgba(255,255,255,0.52)'}
-                  fontSize="xs"
-                  key={tool.id}
-                  letterSpacing="0.12em"
-                  textTransform="uppercase"
-                >
-                  {tool.label}
-                </Text>
-              ))}
+            <Navigation
+              mode={navigationMode}
+              modes={['crop', 'saturation', 'brightness', 'contrast', 'grayscale']}
+              onChange={(nextMode) => {
+                if (nextMode === 'crop') {
+                  setActiveTool('crop')
+                  return
+                }
+
+                setActiveTool('color')
+                setActiveColorControl(navigationModeToColorControl(nextMode))
+              }}
+            />
+            <HStack justify="space-between" px="2">
+              <Text color="fg.muted" fontSize="xs" letterSpacing="0.12em" textTransform="uppercase">
+                {activeTool === 'edge'
+                  ? 'Edge Refinement'
+                  : activeTool === 'crop'
+                    ? 'Crop'
+                    : currentColorControl.label}
+              </Text>
+              <Button
+                minW="0"
+                onClick={() => setActiveTool((current) => (current === 'edge' ? 'crop' : 'edge'))}
+                px="3"
+                rounded="full"
+                size="sm"
+                variant={activeTool === 'edge' ? 'solid' : 'ghost'}
+              >
+                Edge
+              </Button>
             </HStack>
 
             {activeTool === 'crop' ? (
@@ -947,21 +895,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
             {isColorTool ? (
               <Stack gap="3">
-                <HStack gap="2" justify="center">
-                  {colorControls.map((control) => (
-                    <Button
-                      key={control.stateKey}
-                      minW="0"
-                      onClick={() => setActiveColorControl(control.stateKey)}
-                      px="3"
-                      rounded="full"
-                      size="sm"
-                      variant={activeColorControl === control.stateKey ? 'solid' : 'ghost'}
-                    >
-                      {control.label.slice(0, 1)}
-                    </Button>
-                  ))}
-                </HStack>
                 <HStack justify="space-between">
                   <Text fontSize="sm" fontWeight="600">
                     {currentColorControl.label}
@@ -1093,10 +1026,25 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     <Switch.Control />
                     <Switch.Label>Mask cleanup</Switch.Label>
                   </Switch.Root>
+
+                  <Switch.Root
+                    checked={outlineEnabled}
+                    colorPalette="primary"
+                    onCheckedChange={(event) =>
+                      updateEditorState((current) => ({
+                        ...current,
+                        outlineEnabled: event.checked,
+                      }))
+                    }
+                  >
+                    <Switch.HiddenInput />
+                    <Switch.Control />
+                    <Switch.Label>White outline</Switch.Label>
+                  </Switch.Root>
                 </Stack>
                 <Text color="fg.muted" fontSize="xs">
                   Background removal runs automatically when the editor opens and whenever these
-                  settings change.
+                  settings change. The white outline is applied when you save the PNG.
                 </Text>
                 {backgroundError ? (
                   <Alert.Root status="error">
@@ -1119,18 +1067,10 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
         <HStack justify="space-between">
           <HStack gap="3">
-            <Button
-              disabled={!canUndo}
-              onClick={handleUndo}
-              variant="ghost"
-            >
+            <Button disabled={!canUndo} onClick={handleUndo} variant="ghost">
               Undo
             </Button>
-            <Button
-              disabled={!canRedo}
-              onClick={handleRedo}
-              variant="ghost"
-            >
+            <Button disabled={!canRedo} onClick={handleRedo} variant="ghost">
               Redo
             </Button>
             <Button
@@ -1184,7 +1124,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     throw new Error('Could not prepare the cropped image.')
                   }
 
-                  onSave(croppedCanvas.toDataURL('image/png'))
+                  const finalCanvas = outlineEnabled
+                    ? createOutlinedCanvas(croppedCanvas, {
+                        strokeColor: OUTLINE_COLOR,
+                        strokeWidth: OUTLINE_WIDTH,
+                      })
+                    : croppedCanvas
+
+                  onSave(finalCanvas.toDataURL('image/png'))
                   onClose()
                 } finally {
                   setIsSaving(false)

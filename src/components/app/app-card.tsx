@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Box, Image, Stack, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 
+import { Avatar } from '@/icons/avatar'
 import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign, PatternSettings } from '@/types/domain'
 
@@ -104,29 +105,6 @@ function SelectorPattern(props: { color: string; settings: PatternSettings }) {
   )
 }
 
-function AvatarSilhouette() {
-  return (
-    <svg
-      width="240"
-      height="240"
-      viewBox="0 0 240 240"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M120 124C146.51 124 168 102.51 168 76C168 49.4903 146.51 28 120 28C93.4903 28 72 49.4903 72 76C72 102.51 93.4903 124 120 124Z"
-        fill="currentColor"
-        fill-opacity="0.96"
-      />
-      <path
-        d="M42 240C50 178.75 42 142 120 142C198 142 190 178.75 198 240"
-        fill="currentColor"
-        fill-opacity="0.96"
-      />
-    </svg>
-  )
-}
-
 function AppCardFront(props: {
   card: CardDesign
   color: string
@@ -134,9 +112,8 @@ function AppCardFront(props: {
   foreground: string
   lastName?: string
   showSignature?: boolean
-  variationId?: string
 }) {
-  const { card, color, firstName, foreground, lastName, showSignature, variationId } = props
+  const { card, color, firstName, foreground, lastName, showSignature } = props
   const [fallbackFirstLine, fallbackSecondLine] = splitNameLines(card.title)
   const firstLine = firstName ?? fallbackFirstLine
   const secondLine = lastName ?? fallbackSecondLine
@@ -281,7 +258,16 @@ function AppCardFront(props: {
               w="100%"
             />
           ) : (
-            <AvatarSilhouette />
+            <Box
+              alignItems="center"
+              color={foreground}
+              display="flex"
+              h="100%"
+              justifyContent="center"
+              opacity="0.96"
+            >
+              <Avatar height="240px" width="240px" />
+            </Box>
           )}
         </Box>
       </Box>
@@ -378,7 +364,6 @@ function AppCardBack(props: {
         card={card}
         color={color}
         foreground={foreground}
-        variationId={variationId}
         showSignature
       />
 
@@ -480,7 +465,6 @@ export function AppCard(props: AppCardProps) {
             foreground={foreground}
             lastName={lastName}
             showSignature={showSignature}
-            variationId={variationId}
           />
         </AppCardFace>
 

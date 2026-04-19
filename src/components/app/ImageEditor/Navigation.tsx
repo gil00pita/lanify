@@ -1,26 +1,85 @@
-import React, { ChangeEvent, FC, useRef } from 'react'
-import cn from 'classnames'
+'use client'
+
+import { Box, Flex, HStack, IconButton, Input, Text } from '@chakra-ui/react'
+import { type ChangeEvent, type FC, useRef } from 'react'
+
+import { BrightnessIcon } from '@/icons/BrightnessIcon'
+import { ContrastIcon } from '@/icons/ContrastIcon'
 import { CropIcon } from '@/icons/CropIcon'
+import { DownloadIcon } from '@/icons/DownloadIcon'
 import { HueIcon } from '@/icons/HueIcon'
 import { SaturationIcon } from '@/icons/SaturationIcon'
-import { ContrastIcon } from '@/icons/ContrastIcon'
-import { BrightnessIcon } from '@/icons/BrightnessIcon'
 import { UploadIcon } from '@/icons/UploadIcon'
-import { DownloadIcon } from '@/icons/DownloadIcon'
-import { Button } from './Button'
-import './Navigation.scss'
+
+import { Button } from '@chakra-ui/react'
+
+export type EditorMode = 'brightness' | 'contrast' | 'crop' | 'grayscale' | 'hue' | 'saturation'
 
 interface Props {
-  className?: string
-  mode?: string
-  onChange?: (mode: string) => void
+  mode?: EditorMode
+  modes?: EditorMode[]
+  onChange?: (mode: EditorMode) => void
   onDownload?: () => void
   onUpload?: (blob: string) => void
 }
 
-export const Navigation: FC<Props> = ({ className, onChange, onUpload, onDownload, mode }) => {
-  const setMode = (mode: string) => () => {
-    onChange?.(mode)
+const defaultModes: EditorMode[] = ['crop', 'saturation', 'brightness', 'contrast', 'hue']
+
+function getModeButton(mode: EditorMode) {
+  if (mode === 'crop') {
+    return {
+      ariaLabel: 'Crop mode',
+      content: <CropIcon />,
+    }
+  }
+
+  if (mode === 'saturation') {
+    return {
+      ariaLabel: 'Saturation adjustment mode',
+      content: <SaturationIcon />,
+    }
+  }
+
+  if (mode === 'brightness') {
+    return {
+      ariaLabel: 'Brightness adjustment mode',
+      content: <BrightnessIcon />,
+    }
+  }
+
+  if (mode === 'contrast') {
+    return {
+      ariaLabel: 'Contrast adjustment mode',
+      content: <ContrastIcon />,
+    }
+  }
+
+  if (mode === 'grayscale') {
+    return {
+      ariaLabel: 'Grayscale adjustment mode',
+      content: (
+        <Text fontSize={{ base: '9px', sm: '11px' }} fontWeight="700" letterSpacing="0.08em">
+          B/W
+        </Text>
+      ),
+    }
+  }
+
+  return {
+    ariaLabel: 'Hue adjustment mode',
+    content: <HueIcon />,
+  }
+}
+
+export const Navigation: FC<Props> = ({
+  modes = defaultModes,
+  onChange,
+  onUpload,
+  onDownload,
+  mode,
+}) => {
+  const setMode = (nextMode: EditorMode) => () => {
+    onChange?.(nextMode)
   }
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -44,57 +103,58 @@ export const Navigation: FC<Props> = ({ className, onChange, onUpload, onDownloa
   }
 
   return (
-    <div className={cn('image-editor-navigation', className)}>
-      <Button className={'image-editor-navigation__button'} onClick={onUploadButtonClick}>
-        <UploadIcon />
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          onChange={onLoadImage}
-          className="image-editor-navigation__upload-input"
-        />
-      </Button>
-      <div className="image-editor-navigation__buttons">
-        <Button
-          className={'image-editor-navigation__button'}
-          active={mode === 'crop'}
-          onClick={setMode('crop')}
-        >
-          <CropIcon />
-        </Button>
-        <Button
-          className={'image-editor-navigation__button'}
-          active={mode === 'saturation'}
-          onClick={setMode('saturation')}
-        >
-          <SaturationIcon />
-        </Button>
-        <Button
-          className={'image-editor-navigation__button'}
-          active={mode === 'brightness'}
-          onClick={setMode('brightness')}
-        >
-          <BrightnessIcon />
-        </Button>
-        <Button
-          className={'image-editor-navigation__button'}
-          active={mode === 'contrast'}
-          onClick={setMode('contrast')}
-        >
-          <ContrastIcon />
-        </Button>
-        <Button
-          className={'image-editor-navigation__button'}
-          active={mode === 'hue'}
-          onClick={setMode('hue')}
-        >
-          <HueIcon />
-        </Button>
-      </div>
-      <Button className={'image-editor-navigation__button'} onClick={onDownload}>
-        <DownloadIcon />
-      </Button>
-    </div>
+    <Flex
+      align="center"
+      bg="bg.subtle"
+      borderTop="1px solid"
+      borderColor="whiteAlpha.200"
+      gap={{ base: '2', sm: '3' }}
+      h={{ base: '64px', sm: '84px' }}
+      justify="center"
+      px={{ base: '2', sm: '4' }}
+    >
+      {onUpload ? (
+        <IconButton aria-label="Upload image" onClick={onUploadButtonClick}>
+          <UploadIcon />
+          <Input
+            display="none"
+            ref={inputRef}
+            accept="image/*"
+            onChange={onLoadImage}
+            type="file"
+          />
+        </IconButton>
+      ) : (
+        <Box flexShrink={0} w={{ base: '32px', sm: '46px' }} />
+      )}
+      <HStack flex="1" gap={{ base: '1', sm: '2' }} justify="center">
+        {modes.map((nextMode) => {
+          const button = getModeButton(nextMode)
+
+          return (
+            <Button
+              key={nextMode}
+              aria-label={button.ariaLabel}
+              bg={mode === nextMode ? 'whiteAlpha.100' : 'transparent'}
+              color={mode === nextMode ? 'primary.300' : 'whiteAlpha.700'}
+              onClick={setMode(nextMode)}
+              _hover={{
+                bg: 'whiteAlpha.100',
+                color: mode === nextMode ? 'primary.200' : 'white',
+              }}
+            >
+              {button.content}
+            </Button>
+          )
+        })}
+      </HStack>
+      {onDownload ? (
+        <IconButton aria-label="Download image" onClick={onDownload}>
+          <DownloadIcon />
+        </IconButton>
+      ) : (
+        <Box flexShrink={0} w={{ base: '32px', sm: '46px' }} />
+      )}
+    </Flex>
   )
 }
