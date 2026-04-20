@@ -17,8 +17,6 @@ export const UploadIcon: FC<Props> = ({ className, width = '24px', height = '24p
       stroke-width="2"
       viewBox="0 0 24 24"
       aria-hidden="true"
-      height="200px"
-      width="200px"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
