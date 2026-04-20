@@ -352,14 +352,6 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
               </Dialog.Header> */}
               <Dialog.Body p="0">
                 <Stack gap="4">
-                  {cameraError ? (
-                    <Alert.Root status="error">
-                      <Alert.Indicator />
-                      <Alert.Content>
-                        <Alert.Description>{cameraError}</Alert.Description>
-                      </Alert.Content>
-                    </Alert.Root>
-                  ) : null}
                   <Box
                     aspectRatio={3 / 4}
                     bg="black"
@@ -380,9 +372,31 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
                         width: '100%',
                       }}
                     />
+                    {cameraError ? (
+                      <Box
+                        alignItems="center"
+                        display="flex"
+                        inset="0"
+                        justifyContent="center"
+                        pointerEvents="none"
+                        position="absolute"
+                        maxW={'320px'}
+                        left="50%"
+                        top={'50%'}
+                        transform="translate(-50%, -50%)"
+                        opacity={0.6}
+                      >
+                        <Alert.Root status="error">
+                          <Alert.Indicator />
+                          <Alert.Content>
+                            <Alert.Description>{cameraError}</Alert.Description>
+                          </Alert.Content>
+                        </Alert.Root>
+                      </Box>
+                    ) : null}
                     <Box
                       alignItems="center"
-                      display="flex"
+                      display={isCameraLoading ? 'none' : 'flex'}
                       inset="0"
                       justifyContent="center"
                       pointerEvents="none"
@@ -421,7 +435,7 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
                     justify="space-between"
                   >
                     <Button
-                      colorPalette="orange"
+                      colorPalette="primary"
                       loading={isCapturing}
                       onClick={capturePhoto}
                       rounded="full"

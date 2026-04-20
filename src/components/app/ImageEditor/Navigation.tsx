@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Flex, HStack, IconButton, Input, Text } from '@chakra-ui/react'
+import { Box, Flex, IconButton, Input, SegmentGroup, Text } from '@chakra-ui/react'
 import { type ChangeEvent, type FC, useRef } from 'react'
 
 import { BrightnessIcon } from '@/icons/BrightnessIcon'
@@ -10,8 +10,6 @@ import { DownloadIcon } from '@/icons/DownloadIcon'
 import { HueIcon } from '@/icons/HueIcon'
 import { SaturationIcon } from '@/icons/SaturationIcon'
 import { UploadIcon } from '@/icons/UploadIcon'
-
-import { Button } from '@chakra-ui/react'
 
 export type EditorMode = 'brightness' | 'contrast' | 'crop' | 'grayscale' | 'hue' | 'saturation'
 
@@ -78,10 +76,6 @@ export const Navigation: FC<Props> = ({
   onDownload,
   mode,
 }) => {
-  const setMode = (nextMode: EditorMode) => () => {
-    onChange?.(nextMode)
-  }
-
   const inputRef = useRef<HTMLInputElement>(null)
 
   const onUploadButtonClick = () => {
@@ -103,16 +97,7 @@ export const Navigation: FC<Props> = ({
   }
 
   return (
-    <Flex
-      align="center"
-      bg="bg.subtle"
-      borderTop="1px solid"
-      borderColor="whiteAlpha.200"
-      gap={{ base: '2', sm: '3' }}
-      h={{ base: '64px', sm: '84px' }}
-      justify="center"
-      px={{ base: '2', sm: '4' }}
-    >
+    <Flex align="center" justify="center" className="segment-container" w={'full'}>
       {onUpload ? (
         <IconButton aria-label="Upload image" onClick={onUploadButtonClick}>
           <UploadIcon />
@@ -125,29 +110,40 @@ export const Navigation: FC<Props> = ({
           />
         </IconButton>
       ) : (
-        <Box flexShrink={0} w={{ base: '32px', sm: '46px' }} />
+        ''
       )}
-      <HStack flex="1" gap={{ base: '1', sm: '2' }} justify="center">
+      <SegmentGroup.Root
+        flex="1"
+        justifySelf="center"
+        onValueChange={(details) => onChange?.(details.value as EditorMode)}
+        size={{ base: 'sm', sm: 'md' }}
+        value={mode}
+        minW={'0'}
+      >
+        <SegmentGroup.Indicator />
         {modes.map((nextMode) => {
           const button = getModeButton(nextMode)
 
           return (
-            <Button
+            <SegmentGroup.Item
               key={nextMode}
               aria-label={button.ariaLabel}
-              bg={mode === nextMode ? 'whiteAlpha.100' : 'transparent'}
-              color={mode === nextMode ? 'primary.300' : 'whiteAlpha.700'}
-              onClick={setMode(nextMode)}
+              value={nextMode}
+              _checked={{
+                color: 'primary.300',
+              }}
               _hover={{
-                bg: 'whiteAlpha.100',
-                color: mode === nextMode ? 'primary.200' : 'white',
+                color: 'white',
               }}
             >
-              {button.content}
-            </Button>
+              <SegmentGroup.ItemText display="flex" justifyContent="center">
+                {button.content}
+              </SegmentGroup.ItemText>
+              <SegmentGroup.ItemHiddenInput />
+            </SegmentGroup.Item>
           )
         })}
-      </HStack>
+      </SegmentGroup.Root>
       {onDownload ? (
         <IconButton aria-label="Download image" onClick={onDownload}>
           <DownloadIcon />

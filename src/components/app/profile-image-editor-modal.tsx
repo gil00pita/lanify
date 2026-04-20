@@ -8,9 +8,9 @@ import {
   Button,
   HStack,
   IconButton,
-  Input,
   NativeSelect,
   SegmentGroup,
+  Slider,
   Spinner,
   Stack,
   Switch,
@@ -816,7 +816,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 setActiveColorControl(navigationModeToColorControl(nextMode))
               }}
             />
-            <HStack justify="space-between" px="2">
+            {/* <HStack justify="space-between" px="2">
               <Text color="fg.muted" fontSize="xs" letterSpacing="0.12em" textTransform="uppercase">
                 {activeTool === 'edge'
                   ? 'Edge Refinement'
@@ -834,7 +834,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               >
                 Edge
               </Button>
-            </HStack>
+            </HStack> */}
 
             {activeTool === 'crop' ? (
               <Stack gap="3">
@@ -896,7 +896,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     }}
                     rounded="full"
                     size="sm"
-                    variant={'ghost'}
+                    variant={flipHorizontal ? 'solid' : 'ghost'}
                   >
                     <FlipHorizontallyIcon />
                   </IconButton>
@@ -905,13 +905,23 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                   <Text color="fg.muted" fontSize="xs" textAlign="center">
                     Fine rotation
                   </Text>
-                  <Input
-                    max="45"
-                    min="-45"
-                    onChange={(event) => applyRotation(Number(event.target.value))}
-                    type="range"
-                    value={rotation}
-                  />
+                  <Slider.Root
+                    aria-label={['Fine rotation']}
+                    colorPalette="primary"
+                    max={45}
+                    min={-45}
+                    onValueChange={(details) => applyRotation(details.value[0] ?? 0)}
+                    origin="center"
+                    size="sm"
+                    value={[rotation]}
+                  >
+                    <Slider.Control>
+                      <Slider.Track>
+                        <Slider.Range />
+                      </Slider.Track>
+                      <Slider.Thumb index={0} />
+                    </Slider.Control>
+                  </Slider.Root>
                 </Stack>
               </Stack>
             ) : null}
@@ -932,11 +942,13 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                           : grayscale}
                   </Text>
                 </HStack>
-                <Input
+                <Slider.Root
+                  aria-label={[currentColorControl.label]}
+                  colorPalette="primary"
                   max={currentColorControl.max}
                   min={currentColorControl.min}
-                  onChange={(event) => {
-                    const nextValue = Number(event.target.value)
+                  onValueChange={(details) => {
+                    const nextValue = details.value[0] ?? currentColorControl.min
 
                     if (currentColorControl.stateKey === 'brightness') {
                       updateEditorState((current) => ({
@@ -960,18 +972,25 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                       }))
                     }
                   }}
+                  size="sm"
                   step={currentColorControl.step}
-                  type="range"
-                  value={
+                  value={[
                     currentColorControl.stateKey === 'brightness'
                       ? brightness
                       : currentColorControl.stateKey === 'contrast'
                         ? contrast
                         : currentColorControl.stateKey === 'saturate'
                           ? saturate
-                          : grayscale
-                  }
-                />
+                          : grayscale,
+                  ]}
+                >
+                  <Slider.Control>
+                    <Slider.Track>
+                      <Slider.Range />
+                    </Slider.Track>
+                    <Slider.Thumb index={0} />
+                  </Slider.Control>
+                </Slider.Root>
                 <Text color="fg.muted" fontSize="xs" textAlign="center">
                   {currentColorControl.helper}
                 </Text>
