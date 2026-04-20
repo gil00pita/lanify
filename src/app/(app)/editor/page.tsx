@@ -15,8 +15,6 @@ const MotionBox = motion.create(Box)
 export default function EditorPage() {
   const router = useRouter()
   const activeDraft = useAppStore((state) => state.activeDraft)
-  const clearSelectedVariation = useAppStore((state) => state.clearSelectedVariation)
-  const setWizardStep = useAppStore((state) => state.setWizardStep)
   const updateSignature = useAppStore((state) => state.updateSignature)
 
   return (

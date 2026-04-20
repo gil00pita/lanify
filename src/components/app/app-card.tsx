@@ -25,8 +25,9 @@ type AppCardProps = {
   lastName?: string
   onClick?: () => void
   showSignature?: boolean
+  skipAutoFit?: boolean
+  staticPreview?: boolean
   state?: AppCardState
-  variationId?: string
   width?: string | number
 }
 
@@ -112,8 +113,9 @@ function AppCardFront(props: {
   foreground: string
   lastName?: string
   showSignature?: boolean
+  skipAutoFit?: boolean
 }) {
-  const { card, color, firstName, foreground, lastName, showSignature } = props
+  const { card, color, firstName, foreground, lastName, showSignature, skipAutoFit = false } = props
   const [fallbackFirstLine, fallbackSecondLine] = splitNameLines(card.title)
   const firstLine = firstName ?? fallbackFirstLine
   const secondLine = lastName ?? fallbackSecondLine
@@ -130,6 +132,10 @@ function AppCardFront(props: {
   const shouldEllipsizeRole = roleFontSize <= MIN_ROLE_FONT_SIZE + 0.5
 
   useEffect(() => {
+    if (skipAutoFit) {
+      return
+    }
+
     const fitName = () => {
       const container = nameContainerRef.current
       const firstNameNode = firstLineRef.current
@@ -187,9 +193,13 @@ function AppCardFront(props: {
     return () => {
       observer.disconnect()
     }
-  }, [firstLine, nameFontSize, secondLine, surnameFontSize])
+  }, [firstLine, nameFontSize, secondLine, skipAutoFit, surnameFontSize])
 
   useEffect(() => {
+    if (skipAutoFit) {
+      return
+    }
+
     const fitRole = () => {
       const container = roleContainerRef.current
       const roleNode = roleRef.current
@@ -227,7 +237,7 @@ function AppCardFront(props: {
     return () => {
       observer.disconnect()
     }
-  }, [card.subtitle, roleFontSize])
+  }, [card.subtitle, roleFontSize, skipAutoFit])
 
   return (
     <Box h="full" overflow="hidden" position="relative">
@@ -354,9 +364,8 @@ function AppCardBack(props: {
   card: CardDesign
   color: string
   foreground: string
-  variationId?: string
 }) {
-  const { card, color, foreground, variationId } = props
+  const { card, color, foreground } = props
 
   return (
     <Stack gap="4" h="full" justify="space-between">
@@ -386,6 +395,7 @@ function AppCardFace(props: {
       p={0}
       position="absolute"
       overflow={'hidden'}
+      _empty={{ display: 'none' }}
       style={{
         backfaceVisibility: 'hidden',
         transform: `rotateY(${rotateY}deg)`,
@@ -404,8 +414,9 @@ export function AppCard(props: AppCardProps) {
     lastName,
     onClick,
     showSignature = true,
+    skipAutoFit = false,
     state = 'default',
-    variationId,
+    staticPreview = false,
     width = '100%',
   } = props
   const color = card.primaryColor
@@ -413,6 +424,36 @@ export function AppCard(props: AppCardProps) {
   const isInteractive = interactive ?? Boolean(onClick)
   const isSelected = state === 'selected'
   const isCustomizing = state === 'customizing'
+
+  if (staticPreview) {
+    return (
+      <Box
+        cursor={isInteractive ? 'pointer' : 'default'}
+        onClick={isInteractive ? onClick : undefined}
+        position="relative"
+        w={width}
+      >
+        <Box
+          aspectRatio={PRINT_CARD_ASPECT_RATIO}
+          borderRadius="24px"
+          boxShadow="0 12px 28px rgba(17,16,13,0.16)"
+          overflow="hidden"
+          position="relative"
+          w="100%"
+        >
+          <AppCardFront
+            card={card}
+            color={color}
+            firstName={firstName}
+            foreground={foreground}
+            lastName={lastName}
+            showSignature={showSignature}
+            skipAutoFit={skipAutoFit}
+          />
+        </Box>
+      </Box>
+    )
+  }
 
   return (
     <Box
@@ -460,16 +501,12 @@ export function AppCard(props: AppCardProps) {
             foreground={foreground}
             lastName={lastName}
             showSignature={showSignature}
+            skipAutoFit={skipAutoFit}
           />
         </AppCardFace>
 
         <AppCardFace color={color} foreground={foreground} rotateY={180}>
-          <AppCardBack
-            card={card}
-            color={color}
-            foreground={foreground}
-            variationId={variationId}
-          />
+          <AppCardBack card={card} color={color} foreground={foreground} />
         </AppCardFace>
       </MotionBox>
     </Box>

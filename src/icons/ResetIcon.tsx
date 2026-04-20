@@ -1,7 +1,9 @@
-import React, { FC } from 'react'
+import { FC } from 'react'
 
 interface Props {
   className?: string
+  width?: string | number
+  height?: string | number
 }
 
 export const ResetIcon: FC<Props> = ({ className, width = '24px', height = '24px' }) => {

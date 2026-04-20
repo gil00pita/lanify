@@ -15,13 +15,7 @@ import { AdjustablePreviewBackground } from './AdjustablePreviewBackground'
 import { Navigation } from './Navigation'
 import { Slider } from './Slider'
 
-export type ImageEditorMode =
-  | 'brightness'
-  | 'contrast'
-  | 'crop'
-  | 'grayscale'
-  | 'hue'
-  | 'saturation'
+export type ImageEditorMode = 'background' | 'color' | 'crop'
 
 export type ImageEditorAdjustments = {
   brightness: number
@@ -231,17 +225,6 @@ export function ImageEditor() {
   const [mode, setMode] = useState<ImageEditorMode>('crop')
   const [adjustments, setAdjustments] = useState<ImageEditorAdjustments>(defaultAdjustments)
 
-  const onChangeValue = (value: number) => {
-    if (mode === 'crop') {
-      return
-    }
-
-    setAdjustments((previousValue) => ({
-      ...previousValue,
-      [mode]: value,
-    }))
-  }
-
   const onReset = () => {
     setMode('crop')
     setAdjustments(defaultAdjustments)
@@ -269,7 +252,6 @@ export function ImageEditor() {
 
   const changed = adjustmentKeys.some((key) => Math.floor((adjustments[key] ?? 0) * 100))
   const cropperEnabled = mode === 'crop'
-  const sliderValue = mode === 'crop' ? 0 : adjustments[mode]
 
   return (
     <Box border="1px solid" borderColor="whiteAlpha.200" color="primary.300" maxH="full">
@@ -279,11 +261,9 @@ export function ImageEditor() {
         cropperProps={{ onUpdate }}
         cropperRef={cropperRef}
         onReset={onReset}
-        onSliderChange={mode !== 'crop' ? onChangeValue : undefined}
         previewRef={previewRef}
         resetButtonVisible={changed}
         showPreview
-        sliderValue={mode !== 'crop' ? sliderValue : null}
         src={src}
       />
       <Navigation mode={mode} onChange={setMode} onUpload={onUpload} onDownload={onDownload} />

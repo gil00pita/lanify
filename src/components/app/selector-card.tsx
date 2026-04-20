@@ -7,6 +7,7 @@ export function SelectorCard(props: {
   interactive?: boolean
   isSelected?: boolean
   onSelect?: () => void
+  performanceMode?: 'full' | 'gallery'
   variation: GeneratedVariation
   width?: string | number
 }) {
@@ -16,8 +17,9 @@ export function SelectorCard(props: {
       interactive={props.interactive}
       onClick={props.onSelect}
       showSignature={false}
+      skipAutoFit={props.performanceMode === 'gallery'}
       state={props.isSelected ? 'selected' : 'default'}
-      variationId={props.variation.id}
+      staticPreview={props.performanceMode === 'gallery'}
       width={props.width}
     />
   )

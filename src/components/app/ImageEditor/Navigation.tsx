@@ -3,16 +3,13 @@
 import { Flex, IconButton, Input, SegmentGroup } from '@chakra-ui/react'
 import { type ChangeEvent, type FC, useRef } from 'react'
 
-import { BrightnessIcon } from '@/icons/BrightnessIcon'
-import { ContrastIcon } from '@/icons/ContrastIcon'
+import { BackgroundIcon } from '@/icons/BackgroundIcon'
+import { ColorIcon } from '@/icons/ColorIcon'
 import { CropIcon } from '@/icons/CropIcon'
 import { DownloadIcon } from '@/icons/DownloadIcon'
-import { HueIcon } from '@/icons/HueIcon'
-import { SaturationIcon } from '@/icons/SaturationIcon'
 import { UploadIcon } from '@/icons/UploadIcon'
-import { BlackAndWhiteIcon } from '@/icons/BlackAndWhite'
 
-export type EditorMode = 'brightness' | 'contrast' | 'crop' | 'grayscale' | 'hue' | 'saturation'
+export type EditorMode = 'background' | 'color' | 'crop'
 
 interface Props {
   mode?: EditorMode
@@ -22,7 +19,7 @@ interface Props {
   onUpload?: (blob: string) => void
 }
 
-const defaultModes: EditorMode[] = ['crop', 'saturation', 'brightness', 'contrast', 'hue']
+const defaultModes: EditorMode[] = ['crop', 'color', 'background']
 
 function getModeButton(mode: EditorMode) {
   if (mode === 'crop') {
@@ -32,37 +29,16 @@ function getModeButton(mode: EditorMode) {
     }
   }
 
-  if (mode === 'saturation') {
+  if (mode === 'color') {
     return {
-      ariaLabel: 'Saturation adjustment mode',
-      content: <SaturationIcon />,
-    }
-  }
-
-  if (mode === 'brightness') {
-    return {
-      ariaLabel: 'Brightness adjustment mode',
-      content: <BrightnessIcon />,
-    }
-  }
-
-  if (mode === 'contrast') {
-    return {
-      ariaLabel: 'Contrast adjustment mode',
-      content: <ContrastIcon />,
-    }
-  }
-
-  if (mode === 'grayscale') {
-    return {
-      ariaLabel: 'Grayscale adjustment mode',
-      content: <BlackAndWhiteIcon />,
+      ariaLabel: 'Color adjustment mode',
+      content: <ColorIcon />,
     }
   }
 
   return {
-    ariaLabel: 'Hue adjustment mode',
-    content: <HueIcon />,
+    ariaLabel: 'Background adjustment mode',
+    content: <BackgroundIcon />,
   }
 }
 
@@ -121,17 +97,7 @@ export const Navigation: FC<Props> = ({
           const button = getModeButton(nextMode)
 
           return (
-            <SegmentGroup.Item
-              key={nextMode}
-              aria-label={button.ariaLabel}
-              value={nextMode}
-              _checked={{
-                color: 'primary.300',
-              }}
-              _hover={{
-                color: 'white',
-              }}
-            >
+            <SegmentGroup.Item key={nextMode} aria-label={button.ariaLabel} value={nextMode}>
               <SegmentGroup.ItemText display="flex" justifyContent="center">
                 {button.content}
               </SegmentGroup.ItemText>

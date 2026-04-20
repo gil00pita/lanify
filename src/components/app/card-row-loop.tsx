@@ -53,6 +53,9 @@ const ANIMATION_CONFIG = {
   VELOCITY_EPSILON: 0.5,
 } as const
 
+const getTrackTransform = (offset: number, isVertical: boolean) =>
+  isVertical ? `translateY(${-offset}px)` : `translateX(${-offset}px)`
+
 const toCssLength = (value?: number | string): string | undefined =>
   typeof value === 'number' ? `${value}px` : (value ?? undefined)
 
@@ -214,10 +217,7 @@ const useAnimationLoop = (
 
     if (seqSize > 0) {
       offsetRef.current = ((offsetRef.current % seqSize) + seqSize) % seqSize
-      const transformValue = isVertical
-        ? `translate3d(0, ${-offsetRef.current}px, 0)`
-        : `translate3d(${-offsetRef.current}px, 0, 0)`
-      track.style.transform = transformValue
+      track.style.transform = getTrackTransform(offsetRef.current, isVertical)
     }
 
     if (!shouldAnimate || seqSize <= 0) {
@@ -251,10 +251,7 @@ const useAnimationLoop = (
         nextOffset = ((nextOffset % seqSize) + seqSize) % seqSize
         offsetRef.current = nextOffset
 
-        const transformValue = isVertical
-          ? `translate3d(0, ${-offsetRef.current}px, 0)`
-          : `translate3d(${-offsetRef.current}px, 0, 0)`
-        track.style.transform = transformValue
+        track.style.transform = getTrackTransform(offsetRef.current, isVertical)
       }
 
       if (
@@ -652,6 +649,8 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
       >
         <Box
           ref={trackRef}
+          backfaceVisibility="hidden"
+          contain="layout paint style"
           display="flex"
           flexDirection={isVertical ? 'column' : 'row'}
           h={isVertical ? 'max-content' : undefined}
@@ -671,7 +670,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
                     },
                   }
                 : {}),
-              transform: 'translate3d(0, 0, 0) !important',
+              transform: 'translateX(0) !important',
             },
           }}
         >

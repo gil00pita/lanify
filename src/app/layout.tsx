@@ -6,6 +6,11 @@ import './globals.css'
 
 export const metadata: Metadata = {
   description: 'Premium card creation and print-request workflow for lanyard/member cards.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   title: 'Lanyard Card Design Generator',
 }
 

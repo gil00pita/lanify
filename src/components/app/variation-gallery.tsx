@@ -11,6 +11,7 @@ import { SelectorCard } from '@/components/app/selector-card'
 import { generateSmartVariations } from '@/lib/variations'
 import type { GeneratedVariation } from '@/types/domain'
 import { useAppStore } from '@/store/app-store'
+import { CloseIcon } from '@/icons/Close'
 
 const MotionBox = motion.create(Box)
 
@@ -39,20 +40,22 @@ const GalleryRows = memo(function GalleryRows(props: {
           return {
             ariaLabel: `Select ${variation.id} variation`,
             node: (
-              <MotionBox
-                animate={{ opacity: targetOpacity }}
-                initial={{ opacity: 0 }}
+              <Box
                 minW={{ base: '198px', md: '240px' }}
-                transition={{
-                  delay: rowIsInMotion ? rowIndex * 0.12 + itemIndex * 0.08 : 0,
-                  duration: 0.5,
-                  ease: 'easeOut',
-                }}
-                willChange="opacity"
+                opacity={targetOpacity}
+                transition={
+                  rowIsInMotion
+                    ? `opacity 0.5s ease-out ${rowIndex * 0.12 + itemIndex * 0.08}s`
+                    : undefined
+                }
                 w={{ base: '198px', md: '240px' }}
               >
-                <SelectorCard onSelect={() => onSelectVariation(variation)} variation={variation} />
-              </MotionBox>
+                <SelectorCard
+                  onSelect={() => onSelectVariation(variation)}
+                  performanceMode="gallery"
+                  variation={variation}
+                />
+              </Box>
             ),
           }
         })
@@ -192,14 +195,15 @@ export function VariationGallery() {
                   aria-label="Close selected card"
                   onClick={handleCloseFocused}
                   position="absolute"
-                  right={{ base: '-8px', md: '-12px' }}
+                  right={{ base: '-22px' }}
                   rounded="full"
                   size="sm"
-                  top={{ base: '-12px', md: '-16px' }}
+                  top={{ base: '-36px' }}
                   variant="solid"
+                  colorPalette={'gray'}
                   zIndex={1}
                 >
-                  ×
+                  <CloseIcon />
                 </IconButton>
 
                 <MotionBox
@@ -210,9 +214,14 @@ export function VariationGallery() {
                     ease: [0.22, 1, 0.36, 1],
                   }}
                   transformOrigin="center center"
-                  w="full"
+                  w={{ base: '198px', md: '240px' }}
                 >
-                  <SelectorCard interactive={false} isSelected variation={focusedVariation} />
+                  <SelectorCard
+                    isSelected
+                    interactive={false}
+                    variation={focusedVariation}
+                    width="100%"
+                  />
                 </MotionBox>
 
                 <Button

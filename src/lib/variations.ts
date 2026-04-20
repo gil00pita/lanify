@@ -50,7 +50,7 @@ export const colors = {
   red7: '#650A21',
 }
 
-const variationColors = [
+export const variationColors = [
   colors.brandPurple,
   colors.purple3,
   colors.dataShadesGreen,

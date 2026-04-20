@@ -6,14 +6,13 @@ import {
   Alert,
   Box,
   Button,
+  ColorPicker,
   HStack,
   IconButton,
-  NativeSelect,
-  SegmentGroup,
+  parseColor,
   Slider,
   Spinner,
   Stack,
-  Switch,
   Text,
 } from '@chakra-ui/react'
 import {
@@ -28,14 +27,19 @@ import {
   Navigation,
   type EditorMode as ImageNavigationMode,
 } from '@/components/app/ImageEditor/Navigation'
+import { colors } from '@/lib/variations'
+import { BlackAndWhiteIcon } from '@/icons/BlackAndWhite'
+import { BrightnessIcon } from '@/icons/BrightnessIcon'
+import { ContrastIcon } from '@/icons/ContrastIcon'
 import { RotateClockWise } from '@/icons/RotateClockWise'
 import { RotateCounterClockWise } from '@/icons/RotateCoutnerClockWise'
 import { FlipHorizontallyIcon } from '@/icons/FlipHorizontallyIcon'
 import { FrameIcon } from '@/icons/Frame'
+import { SaturationIcon } from '@/icons/SaturationIcon'
 import { ZoomPlusIcon } from '@/icons/ZoomPlus'
 import { ZoomMinusIcon } from '@/icons/ZoomMinus'
 
-type EditorTool = 'crop' | 'color' | 'edge'
+type EditorTool = 'background' | 'color' | 'crop'
 type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
 type RembgModel = 'birefnet-portrait' | 'u2net_human_seg' | 'u2net'
 
@@ -45,7 +49,8 @@ type EditorState = {
   flipHorizontal: boolean
   grayscale: number
   maskCleanup: boolean
-  outlineEnabled: boolean
+  outlineColor: string
+  outlineWidth: number
   rembgEdgePreset: RembgEdgePreset
   rembgModel: RembgModel
   rotation: number
@@ -72,7 +77,8 @@ const defaultState: EditorState = {
   flipHorizontal: false,
   grayscale: 0,
   maskCleanup: false,
-  outlineEnabled: true,
+  outlineColor: '#ffffffe3',
+  outlineWidth: 5,
   rembgEdgePreset: 'off',
   rembgModel: 'u2net_human_seg',
   rotation: 0,
@@ -80,22 +86,6 @@ const defaultState: EditorState = {
 }
 
 const HISTORY_LIMIT = 60
-const OUTLINE_COLOR = '#ffffffe3'
-const OUTLINE_WIDTH = 5
-
-const rembgModelOptions: Array<{ label: string; value: RembgModel }> = [
-  { label: 'Human Segmentation', value: 'u2net_human_seg' },
-  { label: 'Portrait Pro', value: 'birefnet-portrait' },
-  { label: 'General Purpose', value: 'u2net' },
-]
-
-const edgePresetOptions: Array<{ label: string; value: RembgEdgePreset }> = [
-  { label: 'Off', value: 'off' },
-  { label: 'Sharp', value: 'sharp' },
-  { label: 'Balanced', value: 'balanced' },
-  { label: 'Soft', value: 'soft' },
-]
-
 const colorControls: Array<{
   helper: string
   label: string
@@ -133,29 +123,31 @@ const colorControls: Array<{
     stateKey: 'grayscale',
   },
 ]
+const outlineSwatches = [
+  '#fff',
+  colors.gray1,
+  colors.gray2,
+  colors.gray3,
+  colors.gray4,
+  colors.gray5,
+  colors.gray6,
+  colors.gray7,
+]
 
-function colorControlToNavigationMode(
-  value: 'brightness' | 'contrast' | 'saturate' | 'grayscale'
-): ImageNavigationMode {
-  if (value === 'saturate') {
-    return 'saturation'
+function getColorControlIcon(control: (typeof colorControls)[number]['stateKey']) {
+  if (control === 'brightness') {
+    return <BrightnessIcon />
   }
 
-  return value
-}
-
-function navigationModeToColorControl(
-  value: ImageNavigationMode
-): 'brightness' | 'contrast' | 'saturate' | 'grayscale' {
-  if (value === 'saturation') {
-    return 'saturate'
+  if (control === 'contrast') {
+    return <ContrastIcon />
   }
 
-  if (value === 'brightness' || value === 'contrast' || value === 'grayscale') {
-    return value
+  if (control === 'saturate') {
+    return <SaturationIcon />
   }
 
-  return 'brightness'
+  return <BlackAndWhiteIcon />
 }
 
 function blobToDataUrl(blob: Blob) {
@@ -321,7 +313,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const flipHorizontal = editorState.flipHorizontal
   const grayscale = editorState.grayscale
   const maskCleanup = editorState.maskCleanup
-  const outlineEnabled = editorState.outlineEnabled
+  const outlineColor = editorState.outlineColor
+  const outlineWidth = editorState.outlineWidth
   const rembgEdgePreset = editorState.rembgEdgePreset
   const rembgModel = editorState.rembgModel
   const rotation = editorState.rotation
@@ -639,12 +632,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const currentImageSrc = transparentPreviewSrc ?? processingSourceImage
   const cropperEnabled = activeTool === 'crop'
   const isColorTool = activeTool === 'color'
-  const navigationMode =
-    activeTool === 'crop'
-      ? 'crop'
-      : activeTool === 'color'
-        ? colorControlToNavigationMode(activeColorControl)
-        : undefined
+  const isBackgroundTool = activeTool === 'background'
+  const navigationMode: ImageNavigationMode = activeTool
   const currentColorControl =
     colorControls.find((control) => control.stateKey === activeColorControl) ?? colorControls[0]
 
@@ -692,8 +681,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               contrast: (contrast - 100) / 100,
               grayscale,
               hue: 0,
-              outlineColor: outlineEnabled ? OUTLINE_COLOR : undefined,
-              outlineWidth: outlineEnabled ? OUTLINE_WIDTH : 0,
+              outlineColor: outlineWidth > 0 ? outlineColor : undefined,
+              outlineWidth,
               saturation: (saturate - 100) / 100,
             }}
             containerProps={{
@@ -707,6 +696,9 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               ].join(', '),
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '24px',
+              css: {
+                '--lanify-cropper-guide-color': outlineWidth > 0 ? outlineColor : 'transparent',
+              },
               flexShrink: 0,
               maxW: '540px',
               mx: 'auto',
@@ -776,47 +768,12 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             ) : null}
           </ImageEditorCanvas>
 
-          <Stack
-            bg="bg"
-            border="1px solid {colors.border}"
-            borderRadius="24px"
-            gap="3"
-            overflow="hidden"
-            p={{ base: '3', md: '4' }}
-            className="image-controls"
-          >
+          <Stack gap="3" overflow="hidden" className="image-controls">
             <Navigation
               mode={navigationMode}
-              modes={['crop', 'saturation', 'brightness', 'contrast', 'grayscale']}
-              onChange={(nextMode) => {
-                if (nextMode === 'crop') {
-                  setActiveTool('crop')
-                  return
-                }
-
-                setActiveTool('color')
-                setActiveColorControl(navigationModeToColorControl(nextMode))
-              }}
+              modes={['crop', 'color', 'background']}
+              onChange={(nextMode) => setActiveTool(nextMode)}
             />
-            {/* <HStack justify="space-between" px="2">
-              <Text color="fg.muted" fontSize="xs" letterSpacing="0.12em" textTransform="uppercase">
-                {activeTool === 'edge'
-                  ? 'Edge Refinement'
-                  : activeTool === 'crop'
-                    ? 'Crop'
-                    : currentColorControl.label}
-              </Text>
-              <Button
-                minW="0"
-                onClick={() => setActiveTool((current) => (current === 'edge' ? 'crop' : 'edge'))}
-                px="3"
-                rounded="full"
-                size="sm"
-                variant={activeTool === 'edge' ? 'solid' : 'ghost'}
-              >
-                Edge
-              </Button>
-            </HStack> */}
 
             {activeTool === 'crop' ? (
               <Stack gap="3">
@@ -910,6 +867,20 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
             {isColorTool ? (
               <Stack gap="3">
+                <HStack flexWrap="wrap" gap="2" justify="center" color="fg">
+                  {colorControls.map((control) => (
+                    <IconButton
+                      key={control.stateKey}
+                      aria-label={control.label}
+                      onClick={() => setActiveColorControl(control.stateKey)}
+                      rounded="full"
+                      size="sm"
+                      variant={activeColorControl === control.stateKey ? 'solid' : 'ghost'}
+                    >
+                      {getColorControlIcon(control.stateKey)}
+                    </IconButton>
+                  ))}
+                </HStack>
                 <HStack justify="space-between">
                   <Text fontSize="sm" fontWeight="600">
                     {currentColorControl.label}
@@ -979,97 +950,71 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               </Stack>
             ) : null}
 
-            {activeTool === 'edge' ? (
+            {isBackgroundTool ? (
               <Stack gap="3">
-                <Stack gap="3">
-                  <Stack display="none" gap="2">
-                    <Text fontSize="sm" fontWeight="600">
-                      Model
-                    </Text>
-                    <NativeSelect.Root disabled={isRemovingBackground} size="sm" variant="subtle">
-                      <NativeSelect.Field
-                        onChange={(event) =>
-                          updateEditorState((current) => ({
-                            ...current,
-                            rembgModel: event.currentTarget.value as RembgModel,
-                          }))
-                        }
-                        value={rembgModel}
-                      >
-                        {rembgModelOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </NativeSelect.Field>
-                      <NativeSelect.Indicator />
-                    </NativeSelect.Root>
-                  </Stack>
-
-                  <Stack gap="2">
-                    <Text fontSize="sm" fontWeight="600">
-                      Edge Refinement
-                    </Text>
-                    <SegmentGroup.Root
-                      disabled={isRemovingBackground}
-                      onValueChange={({ value }) =>
-                        updateEditorState((current) => ({
-                          ...current,
-                          rembgEdgePreset: value as RembgEdgePreset,
-                        }))
-                      }
-                      size="sm"
-                      value={rembgEdgePreset}
-                    >
-                      <SegmentGroup.Indicator />
-                      <SegmentGroup.Items
-                        items={edgePresetOptions.map((option) => ({
-                          label: option.label,
-                          value: option.value,
-                        }))}
-                      />
-                    </SegmentGroup.Root>
+                <HStack justify="space-between">
+                  <Text fontSize="sm" fontWeight="600">
+                    White outline
+                  </Text>
+                  <HStack gap="2">
                     <Text color="fg.muted" fontSize="xs">
-                      `Off` keeps the model&apos;s raw mask. `Sharp` cuts tighter edges. `Soft`
-                      keeps more feathering around hair and natural contours.
+                      {outlineWidth}
                     </Text>
-                  </Stack>
+                    <Box
+                      bg={outlineColor}
+                      border="1px solid rgba(255,255,255,0.2)"
+                      borderRadius="full"
+                      boxSize="4"
+                    />
+                  </HStack>
+                </HStack>
+                <Slider.Root
+                  aria-label={['Outline thickness']}
+                  colorPalette="primary"
+                  max={24}
+                  min={0}
+                  onValueChange={(details) =>
+                    updateEditorState((current) => ({
+                      ...current,
+                      outlineWidth: details.value[0] ?? 0,
+                    }))
+                  }
+                  size="sm"
+                  step={1}
+                  value={[outlineWidth]}
+                >
+                  <Slider.Control>
+                    <Slider.Track>
+                      <Slider.Range />
+                    </Slider.Track>
+                    <Slider.Thumb index={0} />
+                  </Slider.Control>
+                </Slider.Root>
+                <ColorPicker.Root
+                  alignItems="flex-start"
+                  onValueChange={(details) =>
+                    updateEditorState((current) => ({
+                      ...current,
+                      outlineColor: details.valueAsString,
+                    }))
+                  }
+                  value={parseColor(outlineColor)}
+                >
+                  <ColorPicker.HiddenInput />
+                  <ColorPicker.Label fontSize="sm" fontWeight="600">
+                    Outline color
+                  </ColorPicker.Label>
+                  <ColorPicker.SwatchGroup>
+                    {outlineSwatches.map((swatch) => (
+                      <ColorPicker.SwatchTrigger key={swatch} value={swatch}>
+                        <ColorPicker.Swatch value={swatch}>
+                          <ColorPicker.SwatchIndicator boxSize="3" bg="white" />
+                        </ColorPicker.Swatch>
+                      </ColorPicker.SwatchTrigger>
+                    ))}
+                  </ColorPicker.SwatchGroup>
+                </ColorPicker.Root>
 
-                  <Switch.Root
-                    checked={maskCleanup}
-                    colorPalette="primary"
-                    disabled={isRemovingBackground}
-                    onCheckedChange={(event) =>
-                      updateEditorState((current) => ({
-                        ...current,
-                        maskCleanup: event.checked,
-                      }))
-                    }
-                  >
-                    <Switch.HiddenInput />
-                    <Switch.Control />
-                    <Switch.Label>Mask cleanup</Switch.Label>
-                  </Switch.Root>
-
-                  <Switch.Root
-                    checked={outlineEnabled}
-                    colorPalette="primary"
-                    onCheckedChange={(event) =>
-                      updateEditorState((current) => ({
-                        ...current,
-                        outlineEnabled: event.checked,
-                      }))
-                    }
-                  >
-                    <Switch.HiddenInput />
-                    <Switch.Control />
-                    <Switch.Label>White outline</Switch.Label>
-                  </Switch.Root>
-                </Stack>
-                <Text color="fg.muted" fontSize="xs">
-                  Background removal runs automatically when the editor opens and whenever these
-                  settings change. The white outline is applied when you save the PNG.
-                </Text>
                 {backgroundError ? (
                   <Alert.Root status="error">
                     <Alert.Indicator />
@@ -1114,12 +1059,13 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     throw new Error('Could not prepare the cropped image.')
                   }
 
-                  const finalCanvas = outlineEnabled
-                    ? createOutlinedCanvas(croppedCanvas, {
-                        strokeColor: OUTLINE_COLOR,
-                        strokeWidth: OUTLINE_WIDTH,
-                      })
-                    : croppedCanvas
+                  const finalCanvas =
+                    outlineWidth > 0
+                      ? createOutlinedCanvas(croppedCanvas, {
+                          strokeColor: outlineColor,
+                          strokeWidth: outlineWidth,
+                        })
+                      : croppedCanvas
 
                   onSave(finalCanvas.toDataURL('image/png'))
                   onClose()
