@@ -6,7 +6,7 @@ interface Props {
   height?: string
 }
 
-export const UndoIcon: FC<Props> = ({ className, width = '24px', height = '24px' }) => {
+export const RedoIcon: FC<Props> = ({ className, width = '24px', height = '24px' }) => {
   return (
     <svg
       width={width}

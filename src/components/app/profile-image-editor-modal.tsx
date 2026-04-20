@@ -683,28 +683,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               Tune the portrait before saving it back into your profile.
             </Text>
           </Stack>
-          <HStack gap="2">
-            <Button
-              aria-label="Undo last edit"
-              disabled={!canUndo}
-              onClick={handleUndo}
-              rounded="full"
-              size="sm"
-              variant="ghost"
-            >
-              Undo
-            </Button>
-            <Button
-              aria-label="Redo last undone edit"
-              disabled={!canRedo}
-              onClick={handleRedo}
-              rounded="full"
-              size="sm"
-              variant="ghost"
-            >
-              Redo
-            </Button>
-          </HStack>
         </HStack>
 
         <Stack gap="4">
@@ -748,6 +726,9 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               transitions: false,
             }}
             cropperRef={cropperRef}
+            canRedo={canRedo}
+            canUndo={canUndo}
+            onRedo={handleRedo}
             onReset={() => {
               clearHistoryCommitTimer()
               setBackgroundError(null)
@@ -768,6 +749,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 scheduleHistoryCommit(cloneEditorState(defaultState))
               })
             }}
+            onUndo={handleUndo}
             resetButtonVisible
             showPreview={false}
             src={currentImageSrc}
@@ -838,7 +820,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
             {activeTool === 'crop' ? (
               <Stack gap="3">
-                <HStack flexWrap="wrap" gap="2" justify="center">
+                <HStack flexWrap="wrap" gap="2" justify="center" color={'fg'}>
                   <IconButton
                     onClick={() => zoomImage(0.9)}
                     rounded="full"
@@ -1107,41 +1089,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
           </Stack>
         </Stack>
 
-        <HStack justify="space-between">
-          <HStack gap="3">
-            <Button disabled={!canUndo} onClick={handleUndo} variant="ghost">
-              Undo
-            </Button>
-            <Button disabled={!canRedo} onClick={handleRedo} variant="ghost">
-              Redo
-            </Button>
-            <Button
-              onClick={() => {
-                const initialState = cloneEditorState(defaultState)
-
-                clearHistoryCommitTimer()
-                setBackgroundError(null)
-                setEditorState(initialState)
-                cropperRef.current?.reset()
-                setHistoryState({
-                  entries: [
-                    {
-                      cropperState: null,
-                      editorState: initialState,
-                    },
-                  ],
-                  index: 0,
-                })
-
-                window.requestAnimationFrame(() => {
-                  scheduleHistoryCommit(initialState)
-                })
-              }}
-              variant="ghost"
-            >
-              Reset
-            </Button>
-          </HStack>
+        <HStack justify="flex-end">
           <HStack gap="3">
             <Button onClick={onClose} variant="outline">
               Cancel

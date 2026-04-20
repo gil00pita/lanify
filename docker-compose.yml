@@ -23,10 +23,9 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ./src:/app/src
-      - ./next.config.mjs:/app/next.config.mjs
-      - ./tsconfig.json:/app/tsconfig.json
-      - ./next-env.d.ts:/app/next-env.d.ts
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
       rembg:
         condition: service_healthy

@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Flex, IconButton, Input, SegmentGroup, Text } from '@chakra-ui/react'
+import { Flex, IconButton, Input, SegmentGroup } from '@chakra-ui/react'
 import { type ChangeEvent, type FC, useRef } from 'react'
 
 import { BrightnessIcon } from '@/icons/BrightnessIcon'
@@ -10,6 +10,7 @@ import { DownloadIcon } from '@/icons/DownloadIcon'
 import { HueIcon } from '@/icons/HueIcon'
 import { SaturationIcon } from '@/icons/SaturationIcon'
 import { UploadIcon } from '@/icons/UploadIcon'
+import { BlackAndWhiteIcon } from '@/icons/BlackAndWhite'
 
 export type EditorMode = 'brightness' | 'contrast' | 'crop' | 'grayscale' | 'hue' | 'saturation'
 
@@ -55,11 +56,7 @@ function getModeButton(mode: EditorMode) {
   if (mode === 'grayscale') {
     return {
       ariaLabel: 'Grayscale adjustment mode',
-      content: (
-        <Text fontSize={{ base: '9px', sm: '11px' }} fontWeight="700" letterSpacing="0.08em">
-          B/W
-        </Text>
-      ),
+      content: <BlackAndWhiteIcon />,
     }
   }
 
@@ -97,7 +94,7 @@ export const Navigation: FC<Props> = ({
   }
 
   return (
-    <Flex align="center" justify="center" className="segment-container" w={'full'}>
+    <Flex align="center" justify="center" className="segment-container">
       {onUpload ? (
         <IconButton aria-label="Upload image" onClick={onUploadButtonClick}>
           <UploadIcon />
@@ -113,14 +110,13 @@ export const Navigation: FC<Props> = ({
         ''
       )}
       <SegmentGroup.Root
-        flex="1"
         justifySelf="center"
         onValueChange={(details) => onChange?.(details.value as EditorMode)}
         size={{ base: 'sm', sm: 'md' }}
         value={mode}
         minW={'0'}
       >
-        <SegmentGroup.Indicator />
+        <SegmentGroup.Indicator bg={'bg'} />
         {modes.map((nextMode) => {
           const button = getModeButton(nextMode)
 
@@ -149,7 +145,7 @@ export const Navigation: FC<Props> = ({
           <DownloadIcon />
         </IconButton>
       ) : (
-        <Box flexShrink={0} w={{ base: '32px', sm: '46px' }} />
+        ''
       )}
     </Flex>
   )

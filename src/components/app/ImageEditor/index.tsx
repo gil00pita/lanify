@@ -6,7 +6,9 @@ import { type ComponentProps, type ReactNode, type RefObject, useRef, useState }
 import { Cropper, CropperRef, CropperPreview, CropperPreviewRef } from 'react-advanced-cropper'
 
 import { Avatar } from '@/icons/Avatar'
+import { RedoIcon } from '@/icons/Redo'
 import { ResetIcon } from '@/icons/ResetIcon'
+import { UndoIcon } from '@/icons/Undo'
 
 import { AdjustableCropperBackground } from './AdjustableCropperBackground'
 import { AdjustablePreviewBackground } from './AdjustablePreviewBackground'
@@ -58,7 +60,11 @@ type ImageEditorCanvasProps = {
   cropperProps?: Omit<CropperProps, 'backgroundComponent' | 'backgroundProps' | 'ref' | 'src'>
   cropperRef: RefObject<CropperRef | null>
   children?: ReactNode
+  canRedo?: boolean
+  canUndo?: boolean
+  onRedo?: () => void
   onReset?: () => void
+  onUndo?: () => void
   previewProps?: Omit<
     CropperPreviewProps,
     'backgroundComponent' | 'backgroundProps' | 'cropper' | 'ref'
@@ -74,12 +80,16 @@ type ImageEditorCanvasProps = {
 export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
   const {
     adjustments,
+    canRedo = false,
+    canUndo = false,
     children,
     containerProps,
     cropperEnabled = true,
     cropperProps,
     cropperRef,
+    onRedo,
     onReset,
+    onUndo,
     previewProps,
     previewRef,
     resetButtonVisible = false,
@@ -174,24 +184,34 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
         />
       ) : null}
       {onReset ? (
-        <IconButton
-          aria-label="Reset adjustments"
-          bg="whiteAlpha.100"
-          color="white"
-          opacity={resetButtonVisible ? 1 : 0}
-          onClick={onReset}
-          pointerEvents={resetButtonVisible ? 'auto' : 'none'}
+        <Box
+          display="flex"
+          flexDirection="column"
+          gap={3}
           position="absolute"
           right="20px"
           top="20px"
-          visibility={resetButtonVisible ? 'visible' : 'hidden'}
-          _hover={{
-            bg: 'whiteAlpha.200',
-            color: 'primary.300',
-          }}
         >
-          <ResetIcon />
-        </IconButton>
+          <IconButton
+            aria-label="Reset adjustments"
+            opacity={resetButtonVisible ? 1 : 0}
+            onClick={onReset}
+            pointerEvents={resetButtonVisible ? 'auto' : 'none'}
+            visibility={resetButtonVisible ? 'visible' : 'hidden'}
+          >
+            <ResetIcon />
+          </IconButton>
+          {onUndo ? (
+            <IconButton aria-label="Undo edit" disabled={!canUndo} onClick={onUndo}>
+              <UndoIcon />
+            </IconButton>
+          ) : null}
+          {onRedo ? (
+            <IconButton aria-label="Redo edit" disabled={!canRedo} onClick={onRedo}>
+              <RedoIcon />
+            </IconButton>
+          ) : null}
+        </Box>
       ) : null}
       {sliderValue !== null && onSliderChange ? (
         <Box bottom="20px" left="50%" position="absolute" transform="translateX(-50%)" w="full">
