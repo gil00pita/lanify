@@ -7,6 +7,7 @@ import {
   Box,
   Button,
   HStack,
+  IconButton,
   Input,
   NativeSelect,
   SegmentGroup,
@@ -27,6 +28,12 @@ import {
   Navigation,
   type EditorMode as ImageNavigationMode,
 } from '@/components/app/ImageEditor/Navigation'
+import { RotateClockWise } from '@/icons/RotateClockWise'
+import { RotateCounterClockWise } from '@/icons/RotateCoutnerClockWise'
+import { FlipHorizontallyIcon } from '@/icons/FlipHorizontallyIcon'
+import { FrameIcon } from '@/icons/Frame'
+import { ZoomPlusIcon } from '@/icons/ZoomPlus'
+import { ZoomMinusIcon } from '@/icons/ZoomMinus'
 
 type EditorTool = 'crop' | 'color' | 'edge'
 type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
@@ -780,7 +787,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 <Stack align="center" gap="3">
                   <Spinner borderWidth="3px" color="white" size="xl" />
                   <Text color="white" fontSize="sm" fontWeight="600">
-                    Updating cutout...
+                    Removing background...
                   </Text>
                 </Stack>
               </Box>
@@ -832,13 +839,23 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             {activeTool === 'crop' ? (
               <Stack gap="3">
                 <HStack flexWrap="wrap" gap="2" justify="center">
-                  <Button onClick={() => zoomImage(0.9)} rounded="full" size="sm" variant="ghost">
-                    -
-                  </Button>
-                  <Button onClick={() => zoomImage(1.1)} rounded="full" size="sm" variant="ghost">
-                    +
-                  </Button>
-                  <Button
+                  <IconButton
+                    onClick={() => zoomImage(0.9)}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <ZoomMinusIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => zoomImage(1.1)}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <ZoomPlusIcon />
+                  </IconButton>
+                  <IconButton
                     onClick={() => {
                       cropperRef.current?.reset()
                       scheduleHistoryCommit()
@@ -847,25 +864,25 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     size="sm"
                     variant="ghost"
                   >
-                    Frame
-                  </Button>
-                  <Button
+                    <FrameIcon />
+                  </IconButton>
+                  <IconButton
                     onClick={() => applyRotation(rotation - 90)}
                     rounded="full"
                     size="sm"
                     variant="ghost"
                   >
-                    L
-                  </Button>
-                  <Button
+                    <RotateCounterClockWise />
+                  </IconButton>
+                  <IconButton
                     onClick={() => applyRotation(rotation + 90)}
                     rounded="full"
                     size="sm"
                     variant="ghost"
                   >
-                    R
-                  </Button>
-                  <Button
+                    <RotateClockWise />
+                  </IconButton>
+                  <IconButton
                     onClick={() => {
                       cropperRef.current?.flipImage(true, false, {
                         immediately: true,
@@ -879,10 +896,10 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     }}
                     rounded="full"
                     size="sm"
-                    variant={flipHorizontal ? 'solid' : 'ghost'}
+                    variant={'ghost'}
                   >
-                    Flip
-                  </Button>
+                    <FlipHorizontallyIcon />
+                  </IconButton>
                 </HStack>
                 <Stack gap="3">
                   <Text color="fg.muted" fontSize="xs" textAlign="center">

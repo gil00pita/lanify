@@ -6,7 +6,7 @@ interface Props {
   height?: string
 }
 
-export const EditIcon: FC<Props> = ({ className, width = '24px', height = '24px' }) => {
+export const FlipHorizontallyIcon: FC<Props> = ({ className, width = '24px', height = '24px' }) => {
   return (
     <svg
       width={width}
@@ -20,9 +20,9 @@ export const EditIcon: FC<Props> = ({ className, width = '24px', height = '24px'
       strokeLinejoin="round"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
-      <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
-      <path d="M16 5l3 3"></path>
+      <path d="M8 19H5c-1 0-2-1-2-2V7c0-1 1-2 2-2h3"></path>
+      <path d="M16 5h3c1 0 2 1 2 2v10c0 1-1 2-2 2h-3"></path>
+      <line x1="12" x2="12" y1="4" y2="20"></line>
     </svg>
   )
 }
