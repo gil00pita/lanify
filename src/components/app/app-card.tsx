@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Box, Image, Stack, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 
-import { Avatar } from '@/icons/avatar'
+import { Avatar } from '@/icons/Avatar'
 import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign, PatternSettings } from '@/types/domain'
 
@@ -360,12 +360,7 @@ function AppCardBack(props: {
 
   return (
     <Stack gap="4" h="full" justify="space-between">
-      <AppCardFront
-        card={card}
-        color={color}
-        foreground={foreground}
-        showSignature
-      />
+      <AppCardFront card={card} color={color} foreground={foreground} showSignature />
 
       <Box bg={foreground} borderRadius="full" h="4px" opacity="0.14" />
     </Stack>

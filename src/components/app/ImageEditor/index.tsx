@@ -5,7 +5,7 @@ import { type ComponentProps, type ReactNode, type RefObject, useRef, useState }
 
 import { Cropper, CropperRef, CropperPreview, CropperPreviewRef } from 'react-advanced-cropper'
 
-import { Avatar } from '@/icons/avatar'
+import { Avatar } from '@/icons/Avatar'
 import { ResetIcon } from '@/icons/ResetIcon'
 
 import { AdjustableCropperBackground } from './AdjustableCropperBackground'

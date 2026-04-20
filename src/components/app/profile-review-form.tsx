@@ -8,6 +8,7 @@ import {
   Button,
   Dialog,
   HStack,
+  IconButton,
   Image,
   Input,
   Portal,
@@ -16,8 +17,15 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import { Avatar } from '@/icons/avatar'
+import { Avatar } from '@/icons/Avatar'
+import { Camera } from '@/icons/Camera'
+import { CloseIcon } from '@/icons/Close'
+import { FaceGuide } from '@/icons/FaceGuide'
+import { SwitchCamera } from '@/icons/SwtichCamera'
+import { UploadIcon } from '@/icons/UploadIcon'
 import { useAppStore } from '@/store/app-store'
+import { EditIcon } from '@/icons/Edit'
+import { DeleteIcon } from '@/icons/Delete'
 
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
 const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -280,6 +288,7 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
             {hasProfilePicture ? (
               <>
                 <Button rounded="full" w="full" onClick={onRequestOpenEditor} variant="surface">
+                  <EditIcon />
                   Edit Current Picture
                 </Button>
                 <Button
@@ -294,6 +303,7 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
                   variant="surface"
                   w="full"
                 >
+                  <DeleteIcon />
                   Remove Picture
                 </Button>
               </>
@@ -305,10 +315,12 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
                   variant="surface"
                   w="full"
                 >
-                  Upload New Picture
+                  <UploadIcon />
+                  Upload new picture
                 </Button>
                 <Button rounded="full" w="full" onClick={openCamera} variant="surface">
-                  Take Photo
+                  <Camera />
+                  Take a photo
                 </Button>
               </>
             )}
@@ -363,11 +375,26 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
                       style={{
                         height: '100%',
                         inset: 0,
-                        objectFit: 'cover',
+                        objectFit: 'contain',
                         position: 'absolute',
                         width: '100%',
                       }}
                     />
+                    <Box
+                      alignItems="center"
+                      display="flex"
+                      inset="0"
+                      justifyContent="center"
+                      pointerEvents="none"
+                      position="absolute"
+                      maxW={'320px'}
+                      left="50%"
+                      top={'50%'}
+                      transform="translate(-50%, -50%)"
+                      opacity={0.6}
+                    >
+                      <FaceGuide height="72%" width="72%" />
+                    </Box>
                     {isCameraLoading ? (
                       <Stack
                         align="center"
@@ -400,30 +427,35 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
                       rounded="full"
                       size={'xl'}
                     >
+                      <Camera />
                       Capture Photo
                     </Button>
                   </HStack>
                   <HStack
                     position={'absolute'}
-                    top={'24px'}
+                    bottom={'24px'}
                     right={'24px'}
                     flexWrap="wrap"
                     gap="3"
                     justify="space-between"
                   >
                     <Button onClick={closeCamera} rounded="full" variant="surface">
+                      <CloseIcon />
                       Cancel
                     </Button>
                   </HStack>
                   <HStack
                     position={'absolute'}
-                    top={'24px'}
+                    bottom={'24px'}
                     left={'24px'}
                     justify="space-between"
                   >
-                    <Button onClick={toggleCameraFacingMode} rounded="full" variant="surface">
+                    {/* <Button onClick={toggleCameraFacingMode} rounded="full" variant="surface">
                       Use {cameraFacingMode === 'user' ? 'Back Camera' : 'Selfie Camera'}
-                    </Button>
+                    </Button> */}
+                    <IconButton onClick={toggleCameraFacingMode} variant="surface">
+                      <SwitchCamera />
+                    </IconButton>
                   </HStack>
                 </Stack>
               </Dialog.Body>

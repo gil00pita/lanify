@@ -16,7 +16,7 @@ export const Avatar: FC<Props> = ({ className, width = '252px', height = '252px'
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <g clip-path="url(#clip0_36_1657)">
+      <g clipPath="url(#clip0_36_1657)">
         <path
           d="M160.5 183V157L90.5 154C90.6667 162 90.9 179.9 90.5 187.5C90.1 195.1 79 199 73.5 200L71 211.5L128 234L183.5 216C183.833 211.116 182.078 200.371 172 198C163.5 196 160.5 188 160.5 183Z"
           fill="url(#paint0_linear_36_1657)"
@@ -52,8 +52,8 @@ export const Avatar: FC<Props> = ({ className, width = '252px', height = '252px'
           y2="178.452"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="white" />
-          <stop offset="1" stop-color="#E6E3F3" />
+          <stop stopColor="white" />
+          <stop offset="1" stopColor="#E6E3F3" />
         </linearGradient>
         <linearGradient
           id="paint1_linear_36_1657"
@@ -63,8 +63,8 @@ export const Avatar: FC<Props> = ({ className, width = '252px', height = '252px'
           y2="97.9731"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#E6E3F3" />
-          <stop offset="1" stop-color="#CBC3E6" />
+          <stop stopColor="#E6E3F3" />
+          <stop offset="1" stopColor="#CBC3E6" />
         </linearGradient>
         <linearGradient
           id="paint2_linear_36_1657"
@@ -74,8 +74,8 @@ export const Avatar: FC<Props> = ({ className, width = '252px', height = '252px'
           y2="109.651"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0.216346" stop-color="white" />
-          <stop offset="1" stop-color="#E6E3F3" />
+          <stop offset="0.216346" stopColor="white" />
+          <stop offset="1" stopColor="#E6E3F3" />
         </linearGradient>
         <linearGradient
           id="paint3_linear_36_1657"
@@ -85,8 +85,8 @@ export const Avatar: FC<Props> = ({ className, width = '252px', height = '252px'
           y2="110.017"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="white" />
-          <stop offset="1" stop-color="#E6E3F3" />
+          <stop stopColor="white" />
+          <stop offset="1" stopColor="#E6E3F3" />
         </linearGradient>
         <clipPath id="clip0_36_1657">
           <rect width="252" height="252" fill="white" />

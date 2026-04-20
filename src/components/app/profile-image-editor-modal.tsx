@@ -65,7 +65,7 @@ const defaultState: EditorState = {
   flipHorizontal: false,
   grayscale: 0,
   maskCleanup: false,
-  outlineEnabled: false,
+  outlineEnabled: true,
   rembgEdgePreset: 'off',
   rembgModel: 'u2net_human_seg',
   rotation: 0,
@@ -73,8 +73,8 @@ const defaultState: EditorState = {
 }
 
 const HISTORY_LIMIT = 60
-const OUTLINE_COLOR = '#ffffff'
-const OUTLINE_WIDTH = 10
+const OUTLINE_COLOR = '#ffffffe3'
+const OUTLINE_WIDTH = 5
 
 const rembgModelOptions: Array<{ label: string; value: RembgModel }> = [
   { label: 'Human Segmentation', value: 'u2net_human_seg' },
@@ -410,11 +410,17 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   }
 
   function applyRotation(nextRotation: number) {
-    cropperRef.current?.rotateImage(nextRotation, {
-      immediately: true,
-      normalize: true,
-      transitions: false,
-    })
+    const currentRotation = editorStateRef.current.rotation
+    const rotationDelta = nextRotation - currentRotation
+
+    if (rotationDelta !== 0) {
+      cropperRef.current?.rotateImage(rotationDelta, {
+        immediately: true,
+        normalize: true,
+        transitions: false,
+      })
+    }
+
     updateEditorState((current) => ({
       ...current,
       rotation: nextRotation,

@@ -9,6 +9,7 @@ import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-m
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
 import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
+import { LongArrowIcon } from '@/icons/LongArrowIcon'
 
 const sampleCards = [
   { accent: '#f0e6d3', foreground: '#2d241b' },
@@ -154,7 +155,7 @@ export default function WizardPage() {
             {profile.role}
           </Text>
 
-          <Alert.Root status="info" inline size={'sm'} mt="4" maxW={"250px"}>
+          <Alert.Root status="info" inline size={'sm'} mt="4" maxW={'250px'}>
             <Alert.Indicator />
             <Alert.Title>Make sure the background is simple and with uniform color.</Alert.Title>
           </Alert.Root>
@@ -184,6 +185,7 @@ export default function WizardPage() {
               size="lg"
             >
               Start
+              <LongArrowIcon />
             </Button>
           </VStack>
         </Stack>
