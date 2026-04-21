@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge, Box, Button, HStack, Icon, Separator, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, HStack, Icon, Stack, Text, VStack } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
@@ -9,6 +9,7 @@ import { SignaturePad } from '@/components/app/signature-pad'
 import { SimpleEditorPanel } from '@/components/app/simple-editor-panel'
 import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
+import { BackChev } from '@/icons/BackChev'
 
 const MotionBox = motion.create(Box)
 
@@ -32,6 +33,7 @@ export default function EditorPage() {
           rounded={'full'}
           {...frostedGlass}
         >
+          <BackChev width="14px" height="14px" />
           Back
         </Button>
         <HStack py="2" px="4" gap={2} zIndex={'docked'} rounded={'2xl'} {...frostedGlass}>
@@ -60,7 +62,7 @@ export default function EditorPage() {
           </Text>
         </HStack>
       </HStack>
-      <Box overflow="hidden" position="relative" height={'100%'}>
+      <VStack position="relative" height={'100%'} justifyContent={'center'}>
         <HStack
           align="center"
           justifyContent={'flex-start'}
@@ -92,41 +94,10 @@ export default function EditorPage() {
               {activeDraft ? (
                 <Stack gap="4">
                   <Stack gap="2">
-                    <Text
-                      fontSize="xs"
-                      fontWeight="700"
-                      letterSpacing="0.18em"
-                      textTransform="uppercase"
-                    >
-                      Card customizer
-                    </Text>
-                    <Text
-                      fontFamily="Georgia, serif"
-                      fontSize={{ base: '2xl', md: '4xl' }}
-                      lineHeight="0.92"
-                    >
-                      {activeDraft.title}
-                    </Text>
-                    <Text color="fg.muted">
-                      Tune the selected variation, then save it or move into advanced editing.
-                    </Text>
+                    <Text color="fg.muted">Customize your card design {activeDraft.title}.</Text>
                   </Stack>
-
-                  <HStack flexWrap="wrap" gap="3">
-                    <Badge rounded="full" px="3" py="1.5">
-                      Selected variation
-                    </Badge>
-                    <Badge rounded="full" px="3" py="1.5" variant="outline">
-                      {activeDraft.patternSettings.itemsPerRow} columns
-                    </Badge>
-                    <Badge rounded="full" px="3" py="1.5" variant="outline">
-                      {activeDraft.patternSettings.rows} rows
-                    </Badge>
-                  </HStack>
                 </Stack>
               ) : null}
-
-              <Separator />
 
               <SimpleEditorPanel />
 
@@ -142,7 +113,7 @@ export default function EditorPage() {
             </Stack>
           </MotionBox>
         </HStack>
-      </Box>
+      </VStack>
     </Stack>
   )
 }

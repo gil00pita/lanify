@@ -17,20 +17,6 @@ const variationDeltas = [
 ]
 
 export const colors = {
-  brandPurple: '#5236AB',
-  brandRed: '#E31937',
-  commonBlack: '#000000',
-  commonWhite: '#FFFFFF',
-  dataShadesGreen: '#128354',
-  dataShadesRed: '#B00020',
-  dataShadesYellow: '#F1A425',
-  gray1: '#EEEEEE',
-  gray2: '#CCCCCC',
-  gray3: '#999999',
-  gray4: '#777777',
-  gray5: '#555555',
-  gray6: '#333333',
-  gray7: '#000000',
   magenta1: '#CB7CA3',
   magenta2: '#A82465',
   magenta3: '#7E1B4C',
@@ -48,6 +34,17 @@ export const colors = {
   red5: '#E31937',
   red6: '#991F3D',
   red7: '#650A21',
+  dataShadesGreen: '#128354',
+  dataShadesRed: '#B00020',
+  dataShadesYellow: '#F1A425',
+  gray1: '#EEEEEE',
+  gray2: '#CCCCCC',
+  gray3: '#999999',
+  gray4: '#777777',
+  gray5: '#555555',
+  gray6: '#333333',
+  gray7: '#000000',
+  commonWhite: '#FFFFFF',
 }
 
 export const variationColors = [

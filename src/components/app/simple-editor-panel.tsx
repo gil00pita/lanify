@@ -1,9 +1,48 @@
 'use client'
 
-import { Box, Button, HStack, Input, Stack, Switch, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  ColorPicker,
+  HStack,
+  Input,
+  Stack,
+  Switch,
+  Text,
+  parseColor,
+} from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
+import { colors } from '@/lib/variations'
 import { useAppStore } from '@/store/app-store'
+
+const accentSwatches = [
+  colors.magenta1,
+  colors.magenta2,
+  colors.magenta3,
+  colors.purple1,
+  colors.purple2,
+  colors.purple3,
+  colors.purple4,
+  colors.purple5,
+  colors.purple6,
+  colors.purple7,
+  colors.red1,
+  colors.red2,
+  colors.red3,
+  colors.red4,
+  colors.red5,
+  colors.red6,
+  colors.red7,
+  colors.commonWhite,
+  colors.gray1,
+  colors.gray2,
+  colors.gray3,
+  colors.gray4,
+  colors.gray5,
+  colors.gray6,
+  colors.gray7,
+]
 
 export function SimpleEditorPanel() {
   const activeDraft = useAppStore((state) => state.activeDraft)
@@ -12,28 +51,41 @@ export function SimpleEditorPanel() {
   const router = useRouter()
 
   if (!activeDraft) {
-    return (
-      <Box bg="rgba(17,16,13,0.05)" borderRadius="24px" p="6">
-        Create or select a card to start editing.
-      </Box>
-    )
+    return ''
   }
 
   return (
     <Stack gap="4">
       <Box>
-        <Text fontWeight="600" mb="2">
-          Accent color
-        </Text>
-        <Input
-          onChange={(event) =>
+        <ColorPicker.Root
+          alignItems="flex-start"
+          defaultValue={'#fff'}
+          onValueChange={(details) =>
             updateDraft((draft) => ({
               ...draft,
-              primaryColor: event.target.value,
+              primaryColor: details.valueAsString,
             }))
           }
-          value={activeDraft.primaryColor}
-        />
+          value={parseColor(activeDraft.primaryColor)}
+        >
+          <ColorPicker.HiddenInput />
+          <ColorPicker.Label fontSize="sm" fontWeight="600" mb="2">
+            Accent color
+          </ColorPicker.Label>
+          <ColorPicker.SwatchGroup>
+            {accentSwatches.map((swatch) => (
+              <ColorPicker.SwatchTrigger key={swatch} value={swatch}>
+                <ColorPicker.Swatch value={swatch}>
+                  <ColorPicker.SwatchIndicator
+                    boxSize="3"
+                    bg="white"
+                    border={'1px solid {colors.border}'}
+                  />
+                </ColorPicker.Swatch>
+              </ColorPicker.SwatchTrigger>
+            ))}
+          </ColorPicker.SwatchGroup>
+        </ColorPicker.Root>
       </Box>
 
       <Box>

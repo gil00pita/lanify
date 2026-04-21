@@ -15,6 +15,19 @@ interface Props {
   style?: CSSProperties
 }
 
+function getRenderScaleSignature(style: CSSProperties | undefined) {
+  const cssWidth = Number.parseFloat(`${style?.width ?? 0}`)
+  const cssHeight = Number.parseFloat(`${style?.height ?? 0}`)
+  const transform =
+    typeof style?.transform === 'string' && style.transform !== 'none'
+      ? new DOMMatrix(style.transform)
+      : new DOMMatrix()
+  const scaleX = Math.hypot(transform.a, transform.b) || 1
+  const scaleY = Math.hypot(transform.c, transform.d) || 1
+
+  return `${cssWidth}:${cssHeight}:${scaleX}:${scaleY}`
+}
+
 function getOutlineWidthInSourcePixels(
   canvas: HTMLCanvasElement,
   style: CSSProperties | undefined,
@@ -104,6 +117,7 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
   ) => {
     const imageRef = useRef<HTMLImageElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const renderScaleSignature = getRenderScaleSignature(style)
 
     const drawImage = () => {
       const image = imageRef.current
@@ -153,7 +167,17 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
 
     useLayoutEffect(() => {
       drawImage()
-    }, [src, brightness, saturation, hue, grayscale, contrast, outlineColor, outlineWidth, style])
+    }, [
+      src,
+      brightness,
+      saturation,
+      hue,
+      grayscale,
+      contrast,
+      outlineColor,
+      outlineWidth,
+      renderScaleSignature,
+    ])
 
     return (
       <>

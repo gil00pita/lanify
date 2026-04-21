@@ -10,11 +10,24 @@ import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign, PatternSettings } from '@/types/domain'
 
 const MotionBox = motion.create(Box)
-const NAME_MAX_WIDTH = 154
-const MAX_NAME_FONT_SIZE = 36
-const MIN_NAME_FONT_SIZE = 12
-const MAX_ROLE_FONT_SIZE = 18
-const MIN_ROLE_FONT_SIZE = 10
+const CARD_LAYOUT = {
+  default: {
+    infoPanelTop: '56%',
+    maxNameFontSize: 42,
+    maxNameWidth: 154,
+    maxRoleFontSize: 18,
+    minNameFontSize: 12,
+    minRoleFontSize: 10,
+  },
+  gallery: {
+    infoPanelTop: '58%',
+    maxNameFontSize: 36,
+    maxNameWidth: 128,
+    maxRoleFontSize: 14,
+    minNameFontSize: 24,
+    minRoleFontSize: 10,
+  },
+} as const
 
 type AppCardState = 'default' | 'selected' | 'customizing'
 
@@ -109,13 +122,24 @@ function SelectorPattern(props: { color: string; settings: PatternSettings }) {
 function AppCardFront(props: {
   card: CardDesign
   color: string
+  compactLayout?: boolean
   firstName?: string
   foreground: string
   lastName?: string
   showSignature?: boolean
   skipAutoFit?: boolean
 }) {
-  const { card, color, firstName, foreground, lastName, showSignature, skipAutoFit = false } = props
+  const {
+    card,
+    color,
+    compactLayout = false,
+    firstName,
+    foreground,
+    lastName,
+    showSignature,
+    skipAutoFit = false,
+  } = props
+  const layout = compactLayout ? CARD_LAYOUT.gallery : CARD_LAYOUT.default
   const [fallbackFirstLine, fallbackSecondLine] = splitNameLines(card.title)
   const firstLine = firstName ?? fallbackFirstLine
   const secondLine = lastName ?? fallbackSecondLine
@@ -124,12 +148,18 @@ function AppCardFront(props: {
   const firstLineRef = useRef<HTMLParagraphElement | null>(null)
   const secondLineRef = useRef<HTMLParagraphElement | null>(null)
   const roleRef = useRef<HTMLParagraphElement | null>(null)
-  const [nameFontSize, setNameFontSize] = useState(MAX_NAME_FONT_SIZE)
-  const [surnameFontSize, setSurnameFontSize] = useState(MAX_NAME_FONT_SIZE)
-  const [roleFontSize, setRoleFontSize] = useState(MAX_ROLE_FONT_SIZE)
-  const shouldEllipsizeName = nameFontSize <= MIN_NAME_FONT_SIZE + 0.5
-  const shouldEllipsizeSurname = surnameFontSize <= MIN_NAME_FONT_SIZE + 0.5
-  const shouldEllipsizeRole = roleFontSize <= MIN_ROLE_FONT_SIZE + 0.5
+  const [nameFontSize, setNameFontSize] = useState(layout.maxNameFontSize)
+  const [surnameFontSize, setSurnameFontSize] = useState(layout.maxNameFontSize)
+  const [roleFontSize, setRoleFontSize] = useState(layout.maxRoleFontSize)
+  const shouldEllipsizeName = nameFontSize <= layout.minNameFontSize + 0.5
+  const shouldEllipsizeSurname = surnameFontSize <= layout.minNameFontSize + 0.5
+  const shouldEllipsizeRole = roleFontSize <= layout.minRoleFontSize + 0.5
+
+  useEffect(() => {
+    setNameFontSize(layout.maxNameFontSize)
+    setSurnameFontSize(layout.maxNameFontSize)
+    setRoleFontSize(layout.maxRoleFontSize)
+  }, [layout.maxNameFontSize, layout.maxRoleFontSize])
 
   useEffect(() => {
     if (skipAutoFit) {
@@ -139,7 +169,7 @@ function AppCardFront(props: {
     const fitName = () => {
       const container = nameContainerRef.current
       const firstNameNode = firstLineRef.current
-      const availableWidth = Math.min(container?.clientWidth ?? 0, NAME_MAX_WIDTH)
+      const availableWidth = Math.min(container?.clientWidth ?? 0, layout.maxNameWidth)
 
       if (!container || !firstNameNode) {
         return
@@ -148,8 +178,8 @@ function AppCardFront(props: {
       const nextNameFontSize = fitTextToWidth({
         availableWidth,
         currentFontSize: nameFontSize,
-        maxFontSize: MAX_NAME_FONT_SIZE,
-        minFontSize: MIN_NAME_FONT_SIZE,
+        maxFontSize: layout.maxNameFontSize,
+        minFontSize: layout.minNameFontSize,
         textWidth: firstNameNode.scrollWidth,
       })
 
@@ -165,8 +195,8 @@ function AppCardFront(props: {
       const nextSurnameFontSize = fitTextToWidth({
         availableWidth,
         currentFontSize: surnameFontSize,
-        maxFontSize: MAX_NAME_FONT_SIZE,
-        minFontSize: MIN_NAME_FONT_SIZE,
+        maxFontSize: layout.maxNameFontSize,
+        minFontSize: layout.minNameFontSize,
         textWidth: lastNameNode.scrollWidth,
       })
 
@@ -193,7 +223,16 @@ function AppCardFront(props: {
     return () => {
       observer.disconnect()
     }
-  }, [firstLine, nameFontSize, secondLine, skipAutoFit, surnameFontSize])
+  }, [
+    firstLine,
+    layout.maxNameFontSize,
+    layout.maxNameWidth,
+    layout.minNameFontSize,
+    nameFontSize,
+    secondLine,
+    skipAutoFit,
+    surnameFontSize,
+  ])
 
   useEffect(() => {
     if (skipAutoFit) {
@@ -211,8 +250,8 @@ function AppCardFront(props: {
       const nextRoleFontSize = fitTextToWidth({
         availableWidth: container.clientWidth,
         currentFontSize: roleFontSize,
-        maxFontSize: MAX_ROLE_FONT_SIZE,
-        minFontSize: MIN_ROLE_FONT_SIZE,
+        maxFontSize: layout.maxRoleFontSize,
+        minFontSize: layout.minRoleFontSize,
         textWidth: roleNode.scrollWidth,
       })
 
@@ -237,7 +276,7 @@ function AppCardFront(props: {
     return () => {
       observer.disconnect()
     }
-  }, [card.subtitle, roleFontSize, skipAutoFit])
+  }, [card.subtitle, layout.maxRoleFontSize, layout.minRoleFontSize, roleFontSize, skipAutoFit])
 
   return (
     <Box h="full" overflow="hidden" position="relative">
@@ -250,6 +289,7 @@ function AppCardFront(props: {
         overflow="hidden"
         position="absolute"
         top="0"
+        transition={'background-color 0.6s ease'}
         bg={color}
       >
         <Box inset="0" opacity="0.28" position="absolute">
@@ -291,13 +331,13 @@ function AppCardFront(props: {
         left="0"
         position="absolute"
         pt={3}
-        px={4}
-        pb={5}
+        px={6}
+        pb={7}
         right="0"
-        top={'56%'}
+        top={layout.infoPanelTop}
       >
         <Stack gap={{ base: '2', md: '3' }} h="full" justify="space-between">
-          <Stack gap="1" maxW={`${NAME_MAX_WIDTH}px`} ref={nameContainerRef} w="full">
+          <Stack gap="2" ref={nameContainerRef} w="full">
             <Text
               fontSize={`${nameFontSize}px`}
               fontWeight="600"
@@ -308,7 +348,7 @@ function AppCardFront(props: {
               textOverflow={shouldEllipsizeName ? 'ellipsis' : 'clip'}
               w="full"
               whiteSpace="nowrap"
-              maxW={'154px'}
+              maxW={`${layout.maxNameWidth}px`}
             >
               {firstLine}
             </Text>
@@ -360,18 +400,12 @@ function AppCardFront(props: {
   )
 }
 
-function AppCardBack(props: {
-  card: CardDesign
-  color: string
-  foreground: string
-}) {
+function AppCardBack(props: { card: CardDesign; color: string; foreground: string }) {
   const { card, color, foreground } = props
 
   return (
     <Stack gap="4" h="full" justify="space-between">
       <AppCardFront card={card} color={color} foreground={foreground} showSignature />
-
-      <Box bg={foreground} borderRadius="full" h="4px" opacity="0.14" />
     </Stack>
   )
 }
@@ -444,6 +478,7 @@ export function AppCard(props: AppCardProps) {
           <AppCardFront
             card={card}
             color={color}
+            compactLayout={skipAutoFit}
             firstName={firstName}
             foreground={foreground}
             lastName={lastName}
@@ -504,7 +539,6 @@ export function AppCard(props: AppCardProps) {
             skipAutoFit={skipAutoFit}
           />
         </AppCardFace>
-
         <AppCardFace color={color} foreground={foreground} rotateY={180}>
           <AppCardBack card={card} color={color} foreground={foreground} />
         </AppCardFace>

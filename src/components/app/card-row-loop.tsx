@@ -238,7 +238,11 @@ const useAnimationLoop = (
       const deltaTime = Math.max(0, timestamp - lastTimestampRef.current) / 1000
       lastTimestampRef.current = timestamp
 
-      const target = freeze ? 0 : isHovered && hoverSpeed !== undefined ? hoverSpeed : targetVelocity
+      const target = freeze
+        ? 0
+        : isHovered && hoverSpeed !== undefined
+          ? hoverSpeed
+          : targetVelocity
       const smoothTau =
         freeze && freezeDurationMs > 0
           ? freezeDurationMs / 1000 / ANIMATION_CONFIG.FREEZE_EASING_DIVISOR
@@ -276,13 +280,23 @@ const useAnimationLoop = (
       }
       lastTimestampRef.current = null
     }
-  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, shouldAnimate, freeze, freezeDurationMs])
+  }, [
+    targetVelocity,
+    seqWidth,
+    seqHeight,
+    isHovered,
+    hoverSpeed,
+    isVertical,
+    shouldAnimate,
+    freeze,
+    freezeDurationMs,
+  ])
 }
 
 export const CardRowLoop = React.memo<CardRowLoopProps>(
   ({
     items,
-    speed = 120,
+    speed = 60,
     direction = 'left',
     width = '100%',
     logoHeight = 28,
@@ -492,7 +506,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
               lineHeight="1"
               mb={isVertical ? `${gap}px` : 0}
               mr={isVertical ? 0 : `${gap}px`}
-              overflow={scaleOnHover ? 'visible' : 'hidden'}
+              //overflow={scaleOnHover ? 'visible' : 'hidden'}
               role="listitem"
             >
               {renderItem(item, key)}
@@ -650,7 +664,7 @@ export const CardRowLoop = React.memo<CardRowLoopProps>(
         <Box
           ref={trackRef}
           backfaceVisibility="hidden"
-          contain="layout paint style"
+          contain="layout"
           display="flex"
           flexDirection={isVertical ? 'column' : 'row'}
           h={isVertical ? 'max-content' : undefined}

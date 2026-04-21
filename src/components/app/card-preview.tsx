@@ -15,6 +15,7 @@ export function CardPreview(props: {
     <AppCard
       card={card}
       showSignature={showSignature}
+      skipAutoFit
       state={emphasis === 'focused' ? 'customizing' : 'default'}
       width="240px"
     />

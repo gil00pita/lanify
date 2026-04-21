@@ -74,15 +74,13 @@ type ProfileImageEditorModalProps = {
   transparentImageSrc?: string | null
 }
 
-const WHITE_OUTLINE_COLOR = '#fff'
-
 const defaultState: EditorState = {
   brightness: 100,
   contrast: 100,
   flipHorizontal: false,
   grayscale: 0,
   maskCleanup: false,
-  outlineColor: WHITE_OUTLINE_COLOR,
+  outlineColor: colors.commonWhite,
   outlineWidth: 5,
   rembgEdgePreset: 'off',
   rembgShiftEdge: 0,
@@ -130,7 +128,7 @@ const colorControls: Array<{
   },
 ]
 const outlineSwatches = [
-  WHITE_OUTLINE_COLOR,
+  colors.commonWhite,
   colors.gray1,
   colors.gray2,
   colors.gray3,
@@ -817,11 +815,11 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
         setRawTransparentSrc(transparentImage)
         setEditorState((current) =>
-          current.outlineColor === WHITE_OUTLINE_COLOR
+          current.outlineColor === colors.commonWhite
             ? current
             : {
                 ...current,
-                outlineColor: WHITE_OUTLINE_COLOR,
+                outlineColor: colors.commonWhite,
               }
         )
       })

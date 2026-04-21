@@ -74,7 +74,7 @@ const GalleryRows = memo(function GalleryRows(props: {
               pauseOnHover
               preserveHoverSpacing
               scaleOnHover={phase === 'browsing'}
-              speed={rowIndex % 2 === 0 ? 40 : 30}
+              speed={rowIndex % 2 === 0 ? 20 : 15}
               direction={rowIndex % 2 === 0 ? 'left' : 'right'}
             />
           </Box>
@@ -177,6 +177,7 @@ export function VariationGallery() {
                 gap="5"
                 onClick={(event) => event.stopPropagation()}
                 position="relative"
+                className="card-container"
               >
                 <IconButton
                   aria-label="Close selected card"
@@ -206,6 +207,7 @@ export function VariationGallery() {
                   <SelectorCard
                     isSelected
                     interactive={false}
+                    performanceMode="gallery"
                     variation={focusedVariation}
                     width="100%"
                   />
