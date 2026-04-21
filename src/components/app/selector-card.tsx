@@ -16,7 +16,6 @@ export function SelectorCard(props: {
       card={props.variation.design}
       interactive={props.interactive}
       onClick={props.onSelect}
-      showSignature={false}
       skipAutoFit={props.performanceMode === 'gallery'}
       state={props.isSelected ? 'selected' : 'default'}
       staticPreview={props.performanceMode === 'gallery'}

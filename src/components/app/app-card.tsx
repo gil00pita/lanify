@@ -37,7 +37,6 @@ type AppCardProps = {
   interactive?: boolean
   lastName?: string
   onClick?: () => void
-  showSignature?: boolean
   skipAutoFit?: boolean
   staticPreview?: boolean
   state?: AppCardState
@@ -126,19 +125,9 @@ function AppCardFront(props: {
   firstName?: string
   foreground: string
   lastName?: string
-  showSignature?: boolean
   skipAutoFit?: boolean
 }) {
-  const {
-    card,
-    color,
-    compactLayout = false,
-    firstName,
-    foreground,
-    lastName,
-    showSignature,
-    skipAutoFit = false,
-  } = props
+  const { card, color, compactLayout = false, firstName, foreground, lastName, skipAutoFit = false } = props
   const layout = compactLayout ? CARD_LAYOUT.gallery : CARD_LAYOUT.default
   const [fallbackFirstLine, fallbackSecondLine] = splitNameLines(card.title)
   const firstLine = firstName ?? fallbackFirstLine
@@ -384,17 +373,6 @@ function AppCardFront(props: {
           </Box>
         </Stack>
 
-        <Stack gap="2" pt="2">
-          {showSignature && card.signatureData ? (
-            <Image
-              alt="Signature"
-              h="30px"
-              objectFit="contain"
-              src={card.signatureData.dataUrl}
-              w="92px"
-            />
-          ) : null}
-        </Stack>
       </Box>
     </Box>
   )
@@ -405,7 +383,7 @@ function AppCardBack(props: { card: CardDesign; color: string; foreground: strin
 
   return (
     <Stack gap="4" h="full" justify="space-between">
-      <AppCardFront card={card} color={color} foreground={foreground} showSignature />
+      <AppCardFront card={card} color={color} foreground={foreground} />
     </Stack>
   )
 }
@@ -447,7 +425,6 @@ export function AppCard(props: AppCardProps) {
     interactive,
     lastName,
     onClick,
-    showSignature = true,
     skipAutoFit = false,
     state = 'default',
     staticPreview = false,
@@ -482,7 +459,6 @@ export function AppCard(props: AppCardProps) {
             firstName={firstName}
             foreground={foreground}
             lastName={lastName}
-            showSignature={showSignature}
             skipAutoFit={skipAutoFit}
           />
         </Box>
@@ -535,7 +511,6 @@ export function AppCard(props: AppCardProps) {
             firstName={firstName}
             foreground={foreground}
             lastName={lastName}
-            showSignature={showSignature}
             skipAutoFit={skipAutoFit}
           />
         </AppCardFace>

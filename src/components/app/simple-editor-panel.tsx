@@ -72,7 +72,7 @@ export function SimpleEditorPanel() {
           <ColorPicker.Label fontSize="sm" fontWeight="600" mb="2">
             Accent color
           </ColorPicker.Label>
-          <ColorPicker.SwatchGroup>
+          <ColorPicker.SwatchGroup maxW={'460px'}>
             {accentSwatches.map((swatch) => (
               <ColorPicker.SwatchTrigger key={swatch} value={swatch}>
                 <ColorPicker.Swatch value={swatch}>

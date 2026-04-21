@@ -7,14 +7,12 @@ import type { CardDesign } from '@/types/domain'
 export function CardPreview(props: {
   card: CardDesign
   emphasis?: 'focused' | 'normal'
-  showSignature?: boolean
 }) {
-  const { card, emphasis = 'normal', showSignature = true } = props
+  const { card, emphasis = 'normal' } = props
 
   return (
     <AppCard
       card={card}
-      showSignature={showSignature}
       skipAutoFit
       state={emphasis === 'focused' ? 'customizing' : 'default'}
       width="240px"

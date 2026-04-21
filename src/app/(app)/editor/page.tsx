@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
 import { CardPreview } from '@/components/app/card-preview'
-import { SignaturePad } from '@/components/app/signature-pad'
 import { SimpleEditorPanel } from '@/components/app/simple-editor-panel'
 import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
@@ -16,7 +15,6 @@ const MotionBox = motion.create(Box)
 export default function EditorPage() {
   const router = useRouter()
   const activeDraft = useAppStore((state) => state.activeDraft)
-  const updateSignature = useAppStore((state) => state.updateSignature)
 
   return (
     <Stack
@@ -100,16 +98,6 @@ export default function EditorPage() {
               ) : null}
 
               <SimpleEditorPanel />
-
-              <SignaturePad
-                onConfirm={({ dataUrl, strokes }) =>
-                  updateSignature({
-                    confirmedAt: new Date().toISOString(),
-                    dataUrl,
-                    strokes,
-                  })
-                }
-              />
             </Stack>
           </MotionBox>
         </HStack>
