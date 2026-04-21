@@ -2,7 +2,7 @@
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Box, Button, IconButton, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, IconButton, Stack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
@@ -135,19 +135,6 @@ export function VariationGallery() {
   useEffect(() => {
     setRowsInMotion({})
   }, [variations])
-
-  if (!activeDraft) {
-    return (
-      <Stack gap="4">
-        <Text color="var(--lanyard-muted)">
-          Start a new card in the wizard to generate variations.
-        </Text>
-        <Button onClick={() => router.push('/wizard')} w="fit-content">
-          Back to wizard
-        </Button>
-      </Stack>
-    )
-  }
 
   return (
     <Box minH="100vh" overflow="hidden" position="relative">

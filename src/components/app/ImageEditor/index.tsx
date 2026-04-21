@@ -151,7 +151,9 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
         ref={cropperRef}
         src={src}
         backgroundComponent={AdjustableCropperBackground}
-        backgroundProps={mergedAdjustments}
+        backgroundProps={{
+          ...mergedAdjustments,
+        }}
         backgroundWrapperProps={{
           moveImage: cropperEnabled,
           scaleImage: cropperEnabled,

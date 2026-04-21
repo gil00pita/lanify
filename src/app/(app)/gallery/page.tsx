@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import { VariationGallery } from '@/components/app/variation-gallery'
 import { frostedGlass } from '@/lib/ui-tokens'
+import { BackChev } from '@/icons/BackChev'
 
 export default function GalleryPage() {
   const router = useRouter()
@@ -16,8 +17,10 @@ export default function GalleryPage() {
           onClick={() => router.push('/wizard')}
           variant="outline"
           rounded={'full'}
+          gap={'4px'}
           {...frostedGlass}
         >
+          <BackChev width="14px" height="14px" />
           Back
         </Button>
         <HStack py="2" px="4" gap={2} zIndex={'docked'} rounded={'2xl'} {...frostedGlass}>

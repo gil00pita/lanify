@@ -2,6 +2,8 @@ import { FC } from 'react'
 
 interface Props {
   className?: string
+  height?: number | string
+  width?: number | string
 }
 
 export const BrightnessIcon: FC<Props> = ({ className, width = '24px', height = '24px' }) => {

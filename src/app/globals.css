@@ -56,7 +56,17 @@ body > div:first-child {
   position: relative;
 }
 
-.lanify-profile-cropper .advanced-cropper-rectangle-stencil__draggable-area::after {
+.lanify-profile-cropper--retouch .advanced-cropper-stencil-wrapper,
+.lanify-profile-cropper--retouch .advanced-cropper-rectangle-stencil,
+.lanify-profile-cropper--retouch .advanced-cropper-rectangle-stencil__draggable-area,
+.lanify-profile-cropper--retouch .advanced-cropper-rectangle-stencil__overlay,
+.lanify-profile-cropper--retouch .advanced-cropper-rectangle-stencil__preview,
+.lanify-profile-cropper--retouch .advanced-cropper-rectangle-stencil__grid {
+  pointer-events: none;
+}
+
+.advanced-cropper-rectangle-stencil--resizable
+  .advanced-cropper-rectangle-stencil__draggable-area::after {
   background-image: url('/faceguide.svg');
   background-position: center;
   background-repeat: no-repeat;

@@ -52,6 +52,7 @@ type EditorState = {
   outlineColor: string
   outlineWidth: number
   rembgEdgePreset: RembgEdgePreset
+  rembgShiftEdge: number
   rembgModel: RembgModel
   rotation: number
   saturate: number
@@ -59,6 +60,8 @@ type EditorState = {
 
 type HistoryEntry = {
   cropperState: CropperState | null
+  editedImageSrc: string | null
+  rawImageSrc: string | null
   editorState: EditorState
 }
 
@@ -71,15 +74,18 @@ type ProfileImageEditorModalProps = {
   transparentImageSrc?: string | null
 }
 
+const WHITE_OUTLINE_COLOR = '#fff'
+
 const defaultState: EditorState = {
   brightness: 100,
   contrast: 100,
   flipHorizontal: false,
   grayscale: 0,
   maskCleanup: false,
-  outlineColor: '#ffffffe3',
+  outlineColor: WHITE_OUTLINE_COLOR,
   outlineWidth: 5,
   rembgEdgePreset: 'off',
+  rembgShiftEdge: 0,
   rembgModel: 'u2net_human_seg',
   rotation: 0,
   saturate: 100,
@@ -124,7 +130,7 @@ const colorControls: Array<{
   },
 ]
 const outlineSwatches = [
-  '#fff',
+  WHITE_OUTLINE_COLOR,
   colors.gray1,
   colors.gray2,
   colors.gray3,
@@ -182,6 +188,7 @@ async function removeBackground(
     edgePreset: RembgEdgePreset
     model: RembgModel
     postProcessMask: boolean
+    shiftEdge: number
     signal: AbortSignal
   }
 ) {
@@ -191,6 +198,7 @@ async function removeBackground(
   formData.append('edgePreset', options.edgePreset)
   formData.append('model', options.model)
   formData.append('postProcessMask', String(options.postProcessMask))
+  formData.append('shiftEdge', String(options.shiftEdge))
 
   const response = await fetch('/api/remove-background', {
     body: formData,
@@ -270,7 +278,7 @@ function createOutlinedCanvas(
 }
 
 function cloneEditorState(state: EditorState): EditorState {
-  return { ...state }
+  return structuredClone(state)
 }
 
 function cloneCropperState(state: CropperState | null): CropperState | null {
@@ -279,6 +287,165 @@ function cloneCropperState(state: CropperState | null): CropperState | null {
 
 function createHistorySignature(entry: HistoryEntry) {
   return JSON.stringify(entry)
+}
+
+// ---------------------------------------------------------------------------
+// Client-side shift-edge: erode or dilate the alpha channel of a transparent
+// PNG without any server round-trip, giving the slider instant feedback.
+// ---------------------------------------------------------------------------
+
+async function loadImageIntoCanvas(
+  src: string
+): Promise<{ canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas context unavailable'))
+        return
+      }
+      ctx.drawImage(img, 0, 0)
+      resolve({ canvas, ctx })
+    }
+    img.onerror = () => reject(new Error('Failed to load image for edge processing'))
+    img.src = src
+  })
+}
+
+/**
+ * Separable 2-pass morphology (max-filter = dilate, min-filter = erode).
+ * Matches the approach used by the Python service's shift_alpha_mask helper.
+ */
+function separableMorphology(
+  alpha: Uint8Array,
+  width: number,
+  height: number,
+  radius: number,
+  expand: boolean
+): Uint8Array {
+  const temp = new Uint8Array(width * height)
+  const result = new Uint8Array(width * height)
+
+  // Horizontal pass
+  for (let y = 0; y < height; y++) {
+    const row = y * width
+    for (let x = 0; x < width; x++) {
+      let val = expand ? 0 : 255
+      const x0 = x - radius < 0 ? 0 : x - radius
+      const x1 = x + radius >= width ? width - 1 : x + radius
+      for (let xi = x0; xi <= x1; xi++) {
+        const a = alpha[row + xi]
+        if (expand ? a > val : a < val) val = a
+      }
+      temp[row + x] = val
+    }
+  }
+
+  // Vertical pass
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      let val = expand ? 0 : 255
+      const y0 = y - radius < 0 ? 0 : y - radius
+      const y1 = y + radius >= height ? height - 1 : y + radius
+      for (let yi = y0; yi <= y1; yi++) {
+        const a = temp[yi * width + x]
+        if (expand ? a > val : a < val) val = a
+      }
+      result[y * width + x] = val
+    }
+  }
+
+  return result
+}
+
+/** Box blur on the alpha channel (separable, O(w*h*r)). */
+function boxBlurAlpha(
+  alpha: Uint8Array,
+  width: number,
+  height: number,
+  radius: number
+): Uint8Array {
+  if (radius < 1) return alpha
+  const temp = new Uint8Array(width * height)
+  const result = new Uint8Array(width * height)
+
+  for (let y = 0; y < height; y++) {
+    const row = y * width
+    for (let x = 0; x < width; x++) {
+      let sum = 0
+      const x0 = x - radius < 0 ? 0 : x - radius
+      const x1 = x + radius >= width ? width - 1 : x + radius
+      for (let xi = x0; xi <= x1; xi++) sum += alpha[row + xi]
+      temp[row + x] = Math.round(sum / (x1 - x0 + 1))
+    }
+  }
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      let sum = 0
+      const y0 = y - radius < 0 ? 0 : y - radius
+      const y1 = y + radius >= height ? height - 1 : y + radius
+      for (let yi = y0; yi <= y1; yi++) sum += temp[yi * width + x]
+      result[y * width + x] = Math.round(sum / (y1 - y0 + 1))
+    }
+  }
+
+  return result
+}
+
+/**
+ * Applies the shift-edge transform to a transparent PNG data-URL in the
+ * browser.  Mirrors the Python service's shift_alpha_mask / refine_edges
+ * logic so the result is visually identical without a server round-trip.
+ *
+ * Positive shiftEdge → expands the cutout (recovers hair / fine edges).
+ * Negative shiftEdge → contracts the cutout (removes fringe pixels).
+ */
+async function applyShiftEdgeLocally(src: string, shiftEdge: number): Promise<string> {
+  if (shiftEdge === 0) return src
+
+  const { canvas, ctx } = await loadImageIntoCanvas(src)
+  const { width, height } = canvas
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const { data } = imageData
+
+  // Extract alpha channel
+  const alpha = new Uint8Array(width * height)
+  for (let i = 0; i < width * height; i++) {
+    alpha[i] = data[i * 4 + 3]
+  }
+
+  // Scale radius the same way the Python service does
+  const minDim = Math.min(width, height)
+  const scale = Math.max(1.5, minDim / 512)
+  const radius = Math.max(1, Math.min(160, Math.round(Math.abs(shiftEdge) * scale)))
+
+  // Morphology (dilate for positive, erode for negative)
+  const morphed = separableMorphology(alpha, width, height, radius, shiftEdge > 0)
+
+  // Feather / smooth the edge
+  const featherRadius = Math.max(1, Math.round(Math.abs(shiftEdge) / 8))
+  const feathered = boxBlurAlpha(morphed, width, height, featherRadius)
+
+  // Autocontrast (normalize to full 0-255 range)
+  let minVal = 255
+  let maxVal = 0
+  for (const v of feathered) {
+    if (v < minVal) minVal = v
+    if (v > maxVal) maxVal = v
+  }
+  const range = maxVal - minVal
+
+  for (let i = 0; i < width * height; i++) {
+    data[i * 4 + 3] = range > 1 ? Math.round(((feathered[i] - minVal) / range) * 255) : feathered[i]
+  }
+
+  ctx.putImageData(imageData, 0, 0)
+  return canvas.toDataURL('image/png')
 }
 
 export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
@@ -295,8 +462,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   })
   const [isRemovingBackground, setIsRemovingBackground] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const hasOriginalSource = Boolean(originalImageSrc)
   const [processedTransparentSrc, setProcessedTransparentSrc] = useState<string | null>(
-    transparentImageSrc ?? null
+    hasOriginalSource ? null : (transparentImageSrc ?? null)
+  )
+  // The raw background-removed image from the API (never shift-edge-modified).
+  // Shift edge is applied client-side from this base to avoid API round-trips.
+  const [rawTransparentSrc, setRawTransparentSrc] = useState<string | null>(
+    hasOriginalSource ? null : (transparentImageSrc ?? null)
   )
   const wasOpenRef = useRef(false)
   const removeBackgroundRequestIdRef = useRef(0)
@@ -304,8 +477,12 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const isRestoringHistoryRef = useRef(false)
   const editorStateRef = useRef(editorState)
   const sessionSourceRef = useRef<string | null>(null)
+  const processingSourceImageRef = useRef<string | null>(null)
   const cropperRef = useRef<CropperRef>(null)
-  const processingSourceImage = originalImageSrc ?? imageSrc
+  const rawTransparentSrcRef = useRef(rawTransparentSrc)
+  const processedTransparentSrcRef = useRef(processedTransparentSrc)
+  const processingSourceImage =
+    processingSourceImageRef.current ?? originalImageSrc ?? imageSrc ?? null
   const canUndo = historyState.index > 0
   const canRedo = historyState.index >= 0 && historyState.index < historyState.entries.length - 1
   const brightness = editorState.brightness
@@ -316,6 +493,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const outlineColor = editorState.outlineColor
   const outlineWidth = editorState.outlineWidth
   const rembgEdgePreset = editorState.rembgEdgePreset
+  const rembgShiftEdge = editorState.rembgShiftEdge
   const rembgModel = editorState.rembgModel
   const rotation = editorState.rotation
   const saturate = editorState.saturate
@@ -370,6 +548,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
       historyCommitTimeoutRef.current = null
       commitHistoryEntry({
         cropperState: cloneCropperState(cropperRef.current?.getState() ?? null),
+        editedImageSrc: processedTransparentSrcRef.current,
+        rawImageSrc: rawTransparentSrcRef.current,
         editorState: cloneEditorState(nextEditorState ?? editorStateRef.current),
       })
     }, 180)
@@ -392,6 +572,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     clearHistoryCommitTimer()
     setBackgroundError(null)
     setEditorState(cloneEditorState(entry.editorState))
+    setRawTransparentSrc(entry.rawImageSrc)
+    setProcessedTransparentSrc(entry.editedImageSrc)
 
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
@@ -433,7 +615,34 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
       normalize: true,
       transitions: false,
     })
-    scheduleHistoryCommit()
+
+    if (activeTool === 'background') {
+      cropperRef.current?.setCoordinates(
+        ({ coordinates }) => {
+          if (!coordinates) {
+            return {}
+          }
+
+          const nextWidth = coordinates.width * factor
+          const nextHeight = coordinates.height * factor
+
+          return {
+            height: nextHeight,
+            left: coordinates.left - (nextWidth - coordinates.width) / 2,
+            top: coordinates.top - (nextHeight - coordinates.height) / 2,
+            width: nextWidth,
+          }
+        },
+        {
+          immediately: true,
+          transitions: false,
+        }
+      )
+    }
+
+    if (activeTool !== 'background') {
+      scheduleHistoryCommit()
+    }
   }
 
   function handleUndo() {
@@ -479,6 +688,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   }, [editorState])
 
   useEffect(() => {
+    rawTransparentSrcRef.current = rawTransparentSrc
+  }, [rawTransparentSrc])
+
+  useEffect(() => {
+    processedTransparentSrcRef.current = processedTransparentSrc
+  }, [processedTransparentSrc])
+
+  useEffect(() => {
     if (!isOpen) {
       return
     }
@@ -515,6 +732,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
       wasOpenRef.current = false
       removeBackgroundRequestIdRef.current += 1
       clearHistoryCommitTimer()
+      processingSourceImageRef.current = null
       setIsRemovingBackground(false)
       return
     }
@@ -532,6 +750,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     wasOpenRef.current = true
     setBackgroundError(null)
     sessionSourceRef.current = currentSessionSource
+    processingSourceImageRef.current = originalImageSrc ?? imageSrc ?? null
 
     if (!shouldResetSession) {
       return
@@ -540,11 +759,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     setActiveTool('crop')
     setActiveColorControl('brightness')
     setEditorState(initialState)
-    setProcessedTransparentSrc(transparentImageSrc ?? null)
+    setRawTransparentSrc(hasOriginalSource ? null : (transparentImageSrc ?? null))
+    setProcessedTransparentSrc(hasOriginalSource ? null : (transparentImageSrc ?? null))
     setHistoryState({
       entries: [
         {
           cropperState: null,
+          editedImageSrc: hasOriginalSource ? null : (transparentImageSrc ?? null),
+          rawImageSrc: hasOriginalSource ? null : (transparentImageSrc ?? null),
           editorState: initialState,
         },
       ],
@@ -554,7 +776,13 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     window.requestAnimationFrame(() => {
       scheduleHistoryCommit(initialState)
     })
-  }, [historyState.entries.length, isOpen, processingSourceImage, transparentImageSrc])
+  }, [
+    hasOriginalSource,
+    historyState.entries.length,
+    isOpen,
+    processingSourceImage,
+    transparentImageSrc,
+  ])
 
   useEffect(() => {
     if (!isOpen || !processingSourceImage) {
@@ -562,8 +790,8 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
       return
     }
 
-    if (transparentImageSrc && !hasManualBackgroundSettings) {
-      setProcessedTransparentSrc(transparentImageSrc)
+    if (transparentImageSrc && !hasOriginalSource && !hasManualBackgroundSettings) {
+      setRawTransparentSrc(transparentImageSrc)
       setIsRemovingBackground(false)
       setBackgroundError(null)
       return
@@ -579,6 +807,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
       edgePreset: rembgEdgePreset,
       model: rembgModel,
       postProcessMask: maskCleanup,
+      shiftEdge: 0,
       signal: abortController.signal,
     })
       .then((transparentImage) => {
@@ -586,7 +815,15 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
           return
         }
 
-        setProcessedTransparentSrc(transparentImage)
+        setRawTransparentSrc(transparentImage)
+        setEditorState((current) =>
+          current.outlineColor === WHITE_OUTLINE_COLOR
+            ? current
+            : {
+                ...current,
+                outlineColor: WHITE_OUTLINE_COLOR,
+              }
+        )
       })
       .catch((error: unknown) => {
         if (abortController.signal.aborted) {
@@ -618,6 +855,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     }
   }, [
     hasManualBackgroundSettings,
+    hasOriginalSource,
     isOpen,
     maskCleanup,
     processingSourceImage,
@@ -628,7 +866,39 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
   useEffect(() => () => clearHistoryCommitTimer(), [])
 
-  const transparentPreviewSrc = processedTransparentSrc ?? transparentImageSrc
+  // Apply shift-edge client-side whenever the raw transparent image or the
+  // shift value changes.  This replaces the old server round-trip so the
+  // slider gives instant, smooth visual feedback.
+  useEffect(() => {
+    if (isRestoringHistoryRef.current) return
+
+    if (!rawTransparentSrc) {
+      setProcessedTransparentSrc(null)
+      return
+    }
+
+    if (rembgShiftEdge === 0) {
+      setProcessedTransparentSrc(rawTransparentSrc)
+      return
+    }
+
+    let cancelled = false
+
+    void applyShiftEdgeLocally(rawTransparentSrc, rembgShiftEdge)
+      .then((shifted) => {
+        if (!cancelled) setProcessedTransparentSrc(shifted)
+      })
+      .catch(() => {
+        if (!cancelled) setProcessedTransparentSrc(rawTransparentSrc)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [rawTransparentSrc, rembgShiftEdge])
+
+  const transparentPreviewSrc =
+    processedTransparentSrc ?? (hasOriginalSource ? null : transparentImageSrc)
   const currentImageSrc = transparentPreviewSrc ?? processingSourceImage
   const cropperEnabled = activeTool === 'crop'
   const isColorTool = activeTool === 'color'
@@ -709,7 +979,11 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             cropperProps={{
               className: 'lanify-profile-cropper',
               imageRestriction: ImageRestriction.none,
-              onChange: () => scheduleHistoryCommit(),
+              onChange: () => {
+                if (activeTool !== 'background') {
+                  scheduleHistoryCommit()
+                }
+              },
               stencilComponent: RectangleStencil,
               stencilProps: {
                 aspectRatio: 1,
@@ -722,23 +996,37 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             canUndo={canUndo}
             onRedo={handleRedo}
             onReset={() => {
+              const resetTransparentSrc =
+                rawTransparentSrcRef.current ??
+                processedTransparentSrcRef.current ??
+                (hasOriginalSource ? null : (transparentImageSrc ?? null))
+              const resetEditorState = cloneEditorState(defaultState)
+
               clearHistoryCommitTimer()
               setBackgroundError(null)
-              setEditorState(cloneEditorState(defaultState))
+              setActiveTool('crop')
               setActiveColorControl('brightness')
+              editorStateRef.current = resetEditorState
+              rawTransparentSrcRef.current = resetTransparentSrc
+              processedTransparentSrcRef.current = resetTransparentSrc
+              setEditorState(resetEditorState)
+              setRawTransparentSrc(resetTransparentSrc)
+              setProcessedTransparentSrc(resetTransparentSrc)
+              isRestoringHistoryRef.current = true
               cropperRef.current?.reset()
               setHistoryState({
                 entries: [
                   {
                     cropperState: null,
-                    editorState: cloneEditorState(defaultState),
+                    editedImageSrc: resetTransparentSrc,
+                    rawImageSrc: resetTransparentSrc,
+                    editorState: resetEditorState,
                   },
                 ],
                 index: 0,
               })
-
               window.requestAnimationFrame(() => {
-                scheduleHistoryCommit(cloneEditorState(defaultState))
+                isRestoringHistoryRef.current = false
               })
             }}
             onUndo={handleUndo}
@@ -874,7 +1162,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                       aria-label={control.label}
                       onClick={() => setActiveColorControl(control.stateKey)}
                       rounded="full"
-                      size="sm"
                       variant={activeColorControl === control.stateKey ? 'solid' : 'ghost'}
                     >
                       {getColorControlIcon(control.stateKey)}
@@ -952,9 +1239,60 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
             {isBackgroundTool ? (
               <Stack gap="3">
+                <HStack flexWrap="wrap" gap="2" justify="center" color="fg">
+                  <IconButton
+                    aria-label="Zoom out for background cleanup"
+                    onClick={() => zoomImage(0.9)}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <ZoomMinusIcon />
+                  </IconButton>
+                  <IconButton
+                    aria-label="Zoom in for background cleanup"
+                    onClick={() => zoomImage(1.1)}
+                    rounded="full"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <ZoomPlusIcon />
+                  </IconButton>
+                </HStack>
                 <HStack justify="space-between">
                   <Text fontSize="sm" fontWeight="600">
-                    White outline
+                    Shift edge
+                  </Text>
+                  <Text color="fg.muted" fontSize="xs">
+                    {rembgShiftEdge > 0 ? `+${rembgShiftEdge}` : rembgShiftEdge}
+                  </Text>
+                </HStack>
+                <Slider.Root
+                  aria-label={['Shift edge']}
+                  colorPalette="primary"
+                  max={20}
+                  min={-20}
+                  onValueChange={(details) =>
+                    updateEditorState((current) => ({
+                      ...current,
+                      rembgShiftEdge: details.value[0] ?? 0,
+                    }))
+                  }
+                  origin="center"
+                  size="sm"
+                  step={1}
+                  value={[rembgShiftEdge]}
+                >
+                  <Slider.Control>
+                    <Slider.Track>
+                      <Slider.Range />
+                    </Slider.Track>
+                    <Slider.Thumb index={0} />
+                  </Slider.Control>
+                </Slider.Root>
+                <HStack justify="space-between">
+                  <Text fontSize="sm" fontWeight="600">
+                    Portrait outline
                   </Text>
                   <HStack gap="2">
                     <Text color="fg.muted" fontSize="xs">
@@ -971,7 +1309,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 <Slider.Root
                   aria-label={['Outline thickness']}
                   colorPalette="primary"
-                  max={24}
+                  max={8}
                   min={0}
                   onValueChange={(details) =>
                     updateEditorState((current) => ({
@@ -992,6 +1330,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 </Slider.Root>
                 <ColorPicker.Root
                   alignItems="flex-start"
+                  defaultValue={'#fff'}
                   onValueChange={(details) =>
                     updateEditorState((current) => ({
                       ...current,
@@ -1008,12 +1347,19 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                     {outlineSwatches.map((swatch) => (
                       <ColorPicker.SwatchTrigger key={swatch} value={swatch}>
                         <ColorPicker.Swatch value={swatch}>
-                          <ColorPicker.SwatchIndicator boxSize="3" bg="white" />
+                          <ColorPicker.SwatchIndicator
+                            boxSize="3"
+                            bg="primary"
+                            border={'1px solid {colors.border}'}
+                          />
                         </ColorPicker.Swatch>
                       </ColorPicker.SwatchTrigger>
                     ))}
                   </ColorPicker.SwatchGroup>
                 </ColorPicker.Root>
+                <Text color="fg.muted" fontSize="xs">
+                  Shift edge nudges the cutout inward or outward before the outline is applied.
+                </Text>
 
                 {backgroundError ? (
                   <Alert.Root status="error">
@@ -1068,7 +1414,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                       : croppedCanvas
 
                   onSave(finalCanvas.toDataURL('image/png'))
-                  onClose()
                 } finally {
                   setIsSaving(false)
                 }

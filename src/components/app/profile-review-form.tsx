@@ -43,7 +43,12 @@ function isCompatibleImageFile(file: File) {
 }
 
 type ProfileReviewFormProps = {
-  onRequestOpenEditor: () => void
+  onRequestOpenEditor: (options?: {
+    revertOnCancel?: {
+      avatarTransparentUrl: string | null
+      avatarUrl: string | null
+    }
+  }) => void
 }
 
 export function ProfileReviewForm(props: ProfileReviewFormProps) {
@@ -128,12 +133,19 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
   }, [cameraFacingMode, isCameraOpen])
 
   function applySelectedImage(imageSrc: string) {
+    const previousImageState = {
+      avatarTransparentUrl: profile.avatarTransparentUrl,
+      avatarUrl: profile.avatarUrl,
+    }
+
     updateProfile((current) => ({
       ...current,
       avatarTransparentUrl: null,
       avatarUrl: imageSrc,
     }))
-    onRequestOpenEditor()
+    onRequestOpenEditor({
+      revertOnCancel: previousImageState,
+    })
   }
 
   function handleUpload(event: ChangeEvent<HTMLInputElement>) {

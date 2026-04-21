@@ -8,7 +8,7 @@ from PIL import Image, ImageFilter, ImageOps
 from rembg import new_session, remove
 
 
-CACHE_SCHEMA_VERSION = "v2"
+CACHE_SCHEMA_VERSION = "v3"
 EDGE_PRESET_OPTIONS = {
     "off": {
         "alpha_matting": False,
@@ -41,6 +41,8 @@ MODEL_SESSIONS = {}
 RESULT_CACHE = OrderedDict()
 SUPPORTED_MODELS = {"birefnet-portrait", "u2net_human_seg", "u2net"}
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MIN_SHIFT_EDGE = -20
+MAX_SHIFT_EDGE = 20
 
 app = FastAPI()
 
@@ -55,13 +57,16 @@ def get_session(model_name: str):
     return session
 
 
-def build_cache_key(contents: bytes, edge_preset: str, model_name: str, post_process_mask: str) -> str:
+def build_cache_key(
+    contents: bytes, edge_preset: str, model_name: str, post_process_mask: str, shift_edge: str
+) -> str:
     digest = sha256()
     digest.update(CACHE_SCHEMA_VERSION.encode("utf-8"))
     digest.update(contents)
     digest.update(edge_preset.encode("utf-8"))
     digest.update(model_name.encode("utf-8"))
     digest.update(post_process_mask.encode("utf-8"))
+    digest.update(shift_edge.encode("utf-8"))
 
     return digest.hexdigest()
 
@@ -84,9 +89,33 @@ def store_cached_result(cache_key: str, result: bytes) -> None:
         RESULT_CACHE.popitem(last=False)
 
 
-def refine_edges(image_bytes: bytes, edge_preset: str) -> bytes:
+def shift_alpha_mask(alpha: Image.Image, shift_edge: int) -> Image.Image:
+    if shift_edge == 0:
+        return alpha
+
+    # Build the shift from a thresholded mask so the cutout visibly expands or contracts.
+    binary_alpha = alpha.point(lambda value: 255 if value >= 24 else 0)
+    min_dimension = min(alpha.size)
+    kernel_radius = round(abs(shift_edge) * max(1.5, min_dimension / 512))
+    kernel_radius = max(1, min(160, kernel_radius))
+    kernel_size = (kernel_radius * 2) + 1
+
+    if shift_edge > 0:
+        shifted = binary_alpha.filter(ImageFilter.MaxFilter(kernel_size))
+    else:
+        shifted = binary_alpha.filter(ImageFilter.MinFilter(kernel_size))
+
+    feather_radius = min(2.5, max(0.6, abs(shift_edge) / 8))
+    shifted = shifted.filter(ImageFilter.GaussianBlur(radius=feather_radius))
+    shifted = ImageOps.autocontrast(shifted, cutoff=1)
+
+    return shifted
+
+
+def refine_edges(image_bytes: bytes, edge_preset: str, shift_edge: int) -> bytes:
     if edge_preset == "off":
-        return image_bytes
+        if shift_edge == 0:
+            return image_bytes
 
     image = Image.open(BytesIO(image_bytes)).convert("RGBA")
     alpha = image.getchannel("A")
@@ -107,6 +136,8 @@ def refine_edges(image_bytes: bytes, edge_preset: str) -> bytes:
         alpha = alpha.filter(ImageFilter.GaussianBlur(radius=4.5))
         alpha = alpha.point(lambda value: int(value * 0.88) if value < 224 else value)
 
+    alpha = shift_alpha_mask(alpha, shift_edge)
+
     image.putalpha(alpha)
     output = BytesIO()
     image.save(output, format="PNG")
@@ -125,6 +156,7 @@ async def remove_background(
     edgePreset: str = "balanced",
     model: str = "birefnet-portrait",
     postProcessMask: str = "true",
+    shiftEdge: str = "0",
 ) -> Response:
     if image.content_type not in SUPPORTED_IMAGE_TYPES:
         raise HTTPException(status_code=415, detail="Use a PNG, JPEG, or WebP image.")
@@ -135,6 +167,14 @@ async def remove_background(
     if model not in SUPPORTED_MODELS:
         raise HTTPException(status_code=400, detail="Choose a valid background removal model.")
 
+    try:
+        parsed_shift_edge = int(shiftEdge)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="Choose a valid shift edge value.") from error
+
+    if parsed_shift_edge < MIN_SHIFT_EDGE or parsed_shift_edge > MAX_SHIFT_EDGE:
+        raise HTTPException(status_code=400, detail="Choose a valid shift edge value.")
+
     contents = await image.read()
 
     if not contents:
@@ -143,7 +183,7 @@ async def remove_background(
     if len(contents) > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(status_code=413, detail="Use an image smaller than 10MB.")
 
-    cache_key = build_cache_key(contents, edgePreset, model, postProcessMask)
+    cache_key = build_cache_key(contents, edgePreset, model, postProcessMask, shiftEdge)
     cached_output = get_cached_result(cache_key)
 
     if cached_output is not None:
@@ -156,7 +196,7 @@ async def remove_background(
             session=get_session(model),
             **EDGE_PRESET_OPTIONS[edgePreset],
         )
-        output = refine_edges(output, edgePreset)
+        output = refine_edges(output, edgePreset, parsed_shift_edge)
     except Exception as error:  # pragma: no cover - defensive service boundary
         return JSONResponse(
             content={"error": f"Rembg failed to process the image: {error}"},

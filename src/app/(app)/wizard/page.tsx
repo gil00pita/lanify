@@ -100,6 +100,10 @@ export default function WizardPage() {
   const setWizardStep = useAppStore((state) => state.setWizardStep)
   const updateProfile = useAppStore((state) => state.updateProfile)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [cancelRevertImage, setCancelRevertImage] = useState<{
+    avatarTransparentUrl: string | null
+    avatarUrl: string | null
+  } | null>(null)
   const hasProfilePicture = Boolean(profile.avatarTransparentUrl ?? profile.avatarUrl)
   const previewImage = profile.avatarTransparentUrl ?? profile.avatarUrl
 
@@ -160,7 +164,12 @@ export default function WizardPage() {
             <Alert.Title>Make sure the background is simple and with uniform color.</Alert.Title>
           </Alert.Root>
 
-          <ProfileReviewForm onRequestOpenEditor={() => setIsEditorOpen(true)} />
+          <ProfileReviewForm
+            onRequestOpenEditor={(options) => {
+              setCancelRevertImage(options?.revertOnCancel ?? null)
+              setIsEditorOpen(true)
+            }}
+          />
 
           <VStack justify="space-between" mt="4">
             <Text color="fg.muted" fontSize="sm">
@@ -195,13 +204,26 @@ export default function WizardPage() {
         <ProfileImageEditorModal
           imageSrc={previewImage}
           isOpen={isEditorOpen}
-          onClose={() => setIsEditorOpen(false)}
-          onSave={(editedImage) =>
+          onClose={() => {
+            if (cancelRevertImage) {
+              updateProfile((current) => ({
+                ...current,
+                avatarTransparentUrl: cancelRevertImage.avatarTransparentUrl,
+                avatarUrl: cancelRevertImage.avatarUrl,
+              }))
+            }
+
+            setCancelRevertImage(null)
+            setIsEditorOpen(false)
+          }}
+          onSave={(editedImage) => {
+            setCancelRevertImage(null)
             updateProfile((current) => ({
               ...current,
               avatarTransparentUrl: editedImage,
             }))
-          }
+            setIsEditorOpen(false)
+          }}
           originalImageSrc={profile.avatarUrl}
           transparentImageSrc={profile.avatarTransparentUrl}
         />

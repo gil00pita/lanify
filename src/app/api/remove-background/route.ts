@@ -5,6 +5,8 @@ const REMBG_SERVICE_URL = process.env.REMBG_SERVICE_URL
 const SUPPORTED_EDGE_PRESETS = new Set(['off', 'sharp', 'balanced', 'soft'])
 const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const SUPPORTED_MODELS = new Set(['birefnet-portrait', 'u2net_human_seg', 'u2net'])
+const MIN_SHIFT_EDGE = -20
+const MAX_SHIFT_EDGE = 20
 
 export const runtime = 'nodejs'
 
@@ -33,6 +35,7 @@ export async function POST(request: Request) {
   const edgePreset = formData.get('edgePreset')
   const model = formData.get('model')
   const postProcessMask = formData.get('postProcessMask')
+  const shiftEdge = formData.get('shiftEdge')
 
   if (!(image instanceof File)) {
     return errorResponse('Upload a supported image before removing the background.', 400)
@@ -44,6 +47,17 @@ export async function POST(request: Request) {
 
   if (typeof model !== 'string' || !SUPPORTED_MODELS.has(model)) {
     return errorResponse('Choose a valid background removal model.', 400)
+  }
+
+  const parsedShiftEdge =
+    typeof shiftEdge === 'string' && shiftEdge.trim() !== '' ? Number.parseInt(shiftEdge, 10) : 0
+
+  if (
+    !Number.isInteger(parsedShiftEdge) ||
+    parsedShiftEdge < MIN_SHIFT_EDGE ||
+    parsedShiftEdge > MAX_SHIFT_EDGE
+  ) {
+    return errorResponse('Choose a valid shift edge value.', 400)
   }
 
   if (!SUPPORTED_IMAGE_TYPES.has(image.type)) {
@@ -59,6 +73,7 @@ export async function POST(request: Request) {
   upstreamFormData.append('edgePreset', edgePreset)
   upstreamFormData.append('model', model)
   upstreamFormData.append('postProcessMask', postProcessMask === 'true' ? 'true' : 'false')
+  upstreamFormData.append('shiftEdge', String(parsedShiftEdge))
 
   let upstreamResponse: Response
 

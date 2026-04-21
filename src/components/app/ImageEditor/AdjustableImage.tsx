@@ -15,6 +15,32 @@ interface Props {
   style?: CSSProperties
 }
 
+function getOutlineWidthInSourcePixels(
+  canvas: HTMLCanvasElement,
+  style: CSSProperties | undefined,
+  outlineWidth: number
+) {
+  if (outlineWidth <= 0) {
+    return 0
+  }
+
+  const cssWidth = Number.parseFloat(`${style?.width ?? canvas.clientWidth ?? canvas.width}`)
+  const cssHeight = Number.parseFloat(`${style?.height ?? canvas.clientHeight ?? canvas.height}`)
+  const transform =
+    typeof style?.transform === 'string' && style.transform !== 'none'
+      ? new DOMMatrix(style.transform)
+      : new DOMMatrix()
+  const scaleX = Math.hypot(transform.a, transform.b) || 1
+  const scaleY = Math.hypot(transform.c, transform.d) || 1
+  const displayedWidth = cssWidth > 0 ? cssWidth * scaleX : canvas.width
+  const displayedHeight = cssHeight > 0 ? cssHeight * scaleY : canvas.height
+  const widthRatio = displayedWidth > 0 ? canvas.width / displayedWidth : 1
+  const heightRatio = displayedHeight > 0 ? canvas.height / displayedHeight : 1
+  const sourcePixels = outlineWidth * Math.max(widthRatio, heightRatio)
+
+  return Math.max(1, Math.round(sourcePixels))
+}
+
 function drawOutline(
   context: CanvasRenderingContext2D,
   sourceCanvas: HTMLCanvasElement,
@@ -112,9 +138,11 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
           ctx.clearRect(0, 0, canvas.width, canvas.height)
 
           if (outlineColor && outlineWidth > 0) {
+            const sourceOutlineWidth = getOutlineWidthInSourcePixels(canvas, style, outlineWidth)
+
             drawOutline(ctx, filteredCanvas, {
               color: outlineColor,
-              width: outlineWidth,
+              width: sourceOutlineWidth,
             })
           }
 
@@ -125,11 +153,15 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
 
     useLayoutEffect(() => {
       drawImage()
-    }, [src, brightness, saturation, hue, grayscale, contrast, outlineColor, outlineWidth])
+    }, [src, brightness, saturation, hue, grayscale, contrast, outlineColor, outlineWidth, style])
 
     return (
       <>
-        <canvas key={`${src}-canvas`} ref={mergeRefs([ref, canvasRef])} style={style} />
+        <canvas
+          key={`${src}-canvas`}
+          ref={mergeRefs([ref, canvasRef])}
+          style={{ ...style, position: 'absolute' }}
+        />
         {src ? (
           <img
             key={`${src}-img`}
@@ -143,7 +175,7 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
         ) : null}
       </>
     )
-  },
+  }
 )
 
 AdjustableImage.displayName = 'AdjustableImage'

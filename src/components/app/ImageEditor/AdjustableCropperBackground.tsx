@@ -1,28 +1,24 @@
-import React, { forwardRef } from "react";
-import {
-  CropperTransitions,
-  CropperImage,
-  CropperState
-} from "react-advanced-cropper";
-import { getBackgroundStyle } from "advanced-cropper";
-import { AdjustableImage } from "./AdjustableImage";
+import React, { forwardRef } from 'react'
+import { CropperTransitions, CropperImage, CropperState } from 'react-advanced-cropper'
+import { getBackgroundStyle } from 'advanced-cropper'
+import { AdjustableImage } from './AdjustableImage'
 
 interface DesiredCropperRef {
-  getState: () => CropperState;
-  getTransitions: () => CropperTransitions;
-  getImage: () => CropperImage;
+  getState: () => CropperState
+  getTransitions: () => CropperTransitions
+  getImage: () => CropperImage
 }
 
 interface Props {
-  cropper: DesiredCropperRef;
-  crossOrigin?: "anonymous" | "use-credentials" | boolean;
-  brightness?: number;
-  saturation?: number;
-  hue?: number;
-  grayscale?: number;
-  contrast?: number;
-  outlineColor?: string;
-  outlineWidth?: number;
+  cropper: DesiredCropperRef
+  crossOrigin?: 'anonymous' | 'use-credentials' | boolean
+  brightness?: number
+  saturation?: number
+  hue?: number
+  grayscale?: number
+  contrast?: number
+  outlineColor?: string
+  outlineWidth?: number
 }
 
 export const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, Props>(
@@ -36,16 +32,15 @@ export const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, Props>(
       grayscale = 0,
       contrast = 0,
       outlineColor,
-      outlineWidth = 0
+      outlineWidth = 0,
     }: Props,
     ref
   ) => {
-    const state = cropper.getState();
-    const transitions = cropper.getTransitions();
-    const image = cropper.getImage();
+    const state = cropper.getState()
+    const transitions = cropper.getTransitions()
+    const image = cropper.getImage()
 
-    const style =
-      image && state ? getBackgroundStyle(image, state, transitions) : {};
+    const style = image && state ? getBackgroundStyle(image, state, transitions) : {}
 
     return (
       <AdjustableImage
@@ -61,6 +56,6 @@ export const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, Props>(
         ref={ref}
         style={style}
       />
-    );
+    )
   }
-);
+)
