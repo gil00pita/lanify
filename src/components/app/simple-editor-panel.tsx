@@ -7,6 +7,7 @@ import {
   HStack,
   Input,
   SimpleGrid,
+  Slider,
   Stack,
   Switch,
   Text,
@@ -114,6 +115,40 @@ function SwatchColorField(props: {
   )
 }
 
+function SliderField(props: {
+  label: string
+  max: number
+  min: number
+  onChange: (value: number) => void
+  step?: number
+  value: number
+}) {
+  const { label, max, min, onChange, step, value } = props
+
+  return (
+    <Box>
+      <Text fontWeight="600" mb="2">
+        {label}
+      </Text>
+      <Slider.Root
+        max={max}
+        min={min}
+        onValueChange={(details) => onChange(details.value[0] ?? value)}
+        size="sm"
+        step={step}
+        value={[value]}
+      >
+        <Slider.Control>
+          <Slider.Track>
+            <Slider.Range />
+          </Slider.Track>
+          <Slider.Thumb index={0} />
+        </Slider.Control>
+      </Slider.Root>
+    </Box>
+  )
+}
+
 export function SimpleEditorPanel() {
   const activeDraft = useAppStore((state) => state.activeDraft)
   const updateDraft = useAppStore((state) => state.updateDraft)
@@ -218,50 +253,40 @@ export function SimpleEditorPanel() {
 
         <Stack gap="4">
           {activePattern.controls.tileSize ? (
-            <Box>
-              <Text fontWeight="600" mb="2">
-                Tile size: {resolvedPatternSettings.tileSize}
-              </Text>
-              <Input
-                max="120"
-                min="20"
-                onChange={(event) =>
-                  updateDraft((draft) => ({
-                    ...draft,
-                    patternSettings: {
-                      ...draft.patternSettings,
-                      tileSize: Number(event.target.value),
-                    },
-                  }))
-                }
-                type="range"
-                value={resolvedPatternSettings.tileSize}
-              />
-            </Box>
+            <SliderField
+              label={`Tile size: ${resolvedPatternSettings.tileSize}`}
+              max={120}
+              min={20}
+              onChange={(value) =>
+                updateDraft((draft) => ({
+                  ...draft,
+                  patternSettings: {
+                    ...draft.patternSettings,
+                    tileSize: value,
+                  },
+                }))
+              }
+              value={resolvedPatternSettings.tileSize}
+            />
           ) : null}
 
           {activePattern.controls.motifScale ? (
-            <Box>
-              <Text fontWeight="600" mb="2">
-                Motif scale: {resolvedPatternSettings.motifScale.toFixed(2)}
-              </Text>
-              <Input
-                max="2"
-                min="0.25"
-                onChange={(event) =>
-                  updateDraft((draft) => ({
-                    ...draft,
-                    patternSettings: {
-                      ...draft.patternSettings,
-                      motifScale: Number(event.target.value),
-                    },
-                  }))
-                }
-                step="0.05"
-                type="range"
-                value={resolvedPatternSettings.motifScale}
-              />
-            </Box>
+            <SliderField
+              label={`Motif scale: ${resolvedPatternSettings.motifScale.toFixed(2)}`}
+              max={2}
+              min={0.25}
+              onChange={(value) =>
+                updateDraft((draft) => ({
+                  ...draft,
+                  patternSettings: {
+                    ...draft.patternSettings,
+                    motifScale: value,
+                  },
+                }))
+              }
+              step={0.05}
+              value={resolvedPatternSettings.motifScale}
+            />
           ) : null}
         </Stack>
       </Box>
@@ -271,22 +296,37 @@ export function SimpleEditorPanel() {
           <Text fontWeight="600" mb="2">
             Rotation: {resolvedPatternSettings.rotation} deg
           </Text>
-          <Input
+          <Slider.Root
             max={rotationStops.length - 1}
-            min="0"
-            onChange={(event) =>
+            min={0}
+            onValueChange={(details) =>
               updateDraft((draft) => ({
                 ...draft,
                 patternSettings: {
                   ...draft.patternSettings,
-                  rotation: rotationStops[Number(event.target.value)] ?? rotationStops[0],
+                  rotation:
+                    rotationStops[details.value[0] ?? 0] ?? rotationStops[0],
                 },
               }))
             }
-            step="1"
-            type="range"
-            value={rotationStops.indexOf(resolvedPatternSettings.rotation as (typeof rotationStops)[number])}
-          />
+            size="sm"
+            step={1}
+            value={[
+              Math.max(
+                0,
+                rotationStops.indexOf(
+                  resolvedPatternSettings.rotation as (typeof rotationStops)[number]
+                )
+              ),
+            ]}
+          >
+            <Slider.Control>
+              <Slider.Track>
+                <Slider.Range />
+              </Slider.Track>
+              <Slider.Thumb index={0} />
+            </Slider.Control>
+          </Slider.Root>
           <HStack justify="space-between" mt="2">
             {rotationStops.map((rotation) => (
               <Text color="fg.muted" fontSize="xs" key={rotation}>
@@ -296,70 +336,55 @@ export function SimpleEditorPanel() {
           </HStack>
         </Box>
 
-        <Box>
-          <Text fontWeight="600" mb="2">
-            Opacity: {resolvedPatternSettings.opacity.toFixed(2)}
-          </Text>
-          <Input
-            max="1"
-            min="0.1"
-            onChange={(event) =>
-              updateDraft((draft) => ({
-                ...draft,
-                patternSettings: {
-                  ...draft.patternSettings,
-                  opacity: Number(event.target.value),
-                },
-              }))
-            }
-            step="0.05"
-            type="range"
-            value={resolvedPatternSettings.opacity}
-          />
-        </Box>
+        <SliderField
+          label={`Opacity: ${resolvedPatternSettings.opacity.toFixed(2)}`}
+          max={1}
+          min={0.1}
+          onChange={(value) =>
+            updateDraft((draft) => ({
+              ...draft,
+              patternSettings: {
+                ...draft.patternSettings,
+                opacity: value,
+              },
+            }))
+          }
+          step={0.05}
+          value={resolvedPatternSettings.opacity}
+        />
 
-        <Box>
-          <Text fontWeight="600" mb="2">
-            Gap: {resolvedPatternSettings.gap}
-          </Text>
-          <Input
-            max="40"
-            min="0"
-            onChange={(event) =>
-              updateDraft((draft) => ({
-                ...draft,
-                patternSettings: {
-                  ...draft.patternSettings,
-                  gap: Number(event.target.value),
-                },
-              }))
-            }
-            type="range"
-            value={resolvedPatternSettings.gap}
-          />
-        </Box>
+        <SliderField
+          label={`Gap: ${resolvedPatternSettings.gap}`}
+          max={40}
+          min={0}
+          onChange={(value) =>
+            updateDraft((draft) => ({
+              ...draft,
+              patternSettings: {
+                ...draft.patternSettings,
+                gap: value,
+              },
+            }))
+          }
+          value={resolvedPatternSettings.gap}
+        />
 
         {activePattern.controls.offsetX ? (
-          <Box>
-            <Text fontWeight="600" mb="2">
-              Horizontal offset: {resolvedPatternSettings.offsetX}
-            </Text>
-            <Input
-              max="30"
-              min="-30"
-              onChange={(event) =>
-                updateDraft((draft) => ({
-                  ...draft,
-                  patternSettings: {
-                    ...draft.patternSettings,
-                    offsetX: Number(event.target.value),
-                  },
-                }))
-              }
-              type="range"
-              value={resolvedPatternSettings.offsetX}
-            />
-          </Box>
+          <SliderField
+            label={`Horizontal offset: ${resolvedPatternSettings.offsetX}`}
+            max={30}
+            min={-30}
+            onChange={(value) =>
+              updateDraft((draft) => ({
+                ...draft,
+                patternSettings: {
+                  ...draft.patternSettings,
+                  offsetX: value,
+                },
+              }))
+            }
+            value={resolvedPatternSettings.offsetX}
+          />
         ) : null}
       </SimpleGrid>
 
@@ -439,27 +464,22 @@ export function SimpleEditorPanel() {
       </VStack>
 
       {activePattern.controls.strokeWidth ? (
-        <Box>
-          <Text fontWeight="600" mb="2">
-            Stroke width: {resolvedPatternSettings.strokeWidth}
-          </Text>
-          <Input
-            max="8"
-            min="0"
-            onChange={(event) =>
-              updateDraft((draft) => ({
-                ...draft,
-                patternSettings: {
-                  ...draft.patternSettings,
-                  strokeWidth: Number(event.target.value),
-                },
-              }))
-            }
-            step="0.25"
-            type="range"
-            value={resolvedPatternSettings.strokeWidth}
-          />
-        </Box>
+        <SliderField
+          label={`Stroke width: ${resolvedPatternSettings.strokeWidth}`}
+          max={8}
+          min={0}
+          onChange={(value) =>
+            updateDraft((draft) => ({
+              ...draft,
+              patternSettings: {
+                ...draft.patternSettings,
+                strokeWidth: value,
+              },
+            }))
+          }
+          step={0.25}
+          value={resolvedPatternSettings.strokeWidth}
+        />
       ) : null}
 
       {activePattern.controls.alternateOpacity ? (
