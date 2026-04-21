@@ -6,6 +6,7 @@ import { Box, Image, Stack, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 
 import { Avatar } from '@/icons/Avatar'
+import { PATTERN_PRESET_MAP } from '@/lib/pattern-presets'
 import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign, PatternSettings } from '@/types/domain'
 
@@ -77,43 +78,64 @@ function fitTextToWidth(params: {
 }
 
 function SelectorPattern(props: { color: string; settings: PatternSettings }) {
-  const { color, settings } = props
-  const foreground = getForeground(color)
-  const cols = Math.min(22, Math.max(12, settings.itemsPerRow))
-  const rows = Math.min(10, Math.max(6, settings.rows))
+  const { settings } = props
+  const pattern = PATTERN_PRESET_MAP[settings.patternId] ?? PATTERN_PRESET_MAP['pattern-01']
+  const resolvedSettings = {
+    ...pattern.defaults,
+    ...settings,
+  }
+  const cell = resolvedSettings.tileSize + resolvedSettings.gap
+  const viewWidth = resolvedSettings.cols * cell
+  const viewHeight = resolvedSettings.rows * cell
+  const items = Array.from(
+    { length: resolvedSettings.rows * resolvedSettings.cols },
+    (_, index) => {
+      const row = Math.floor(index / resolvedSettings.cols)
+      const col = index % resolvedSettings.cols
+      const baseX = col * cell
+      const baseY = row * cell
+      const x = baseX + (row % 2 === 1 ? resolvedSettings.offsetX : 0)
+      const y = baseY + (col % 2 === 1 ? resolvedSettings.offsetY : 0)
+      const isAlt = (row + col) % 2 === 1
 
-  const marks = Array.from({ length: rows * cols }, (_, index) => {
-    const row = Math.floor(index / cols)
-    const col = index % cols
-    const normalized = col / Math.max(cols - 1, 1)
-    const sine =
-      Math.sin(normalized * Math.PI * 2 * settings.frequency + row * 0.45 + settings.phaseOffset) *
-      settings.amplitude
-    const opacity =
-      settings.minOpacity + ((sine + 1) / 2) * (settings.maxOpacity - settings.minOpacity)
+      let localOpacity = resolvedSettings.opacity
+      if (resolvedSettings.alternateOpacity) {
+        const mod = (row + col) % 3
+        localOpacity =
+          mod === 0
+            ? resolvedSettings.opacity
+            : mod === 1
+              ? resolvedSettings.opacity * 0.65
+              : resolvedSettings.opacity * 0.35
+      }
 
-    return {
-      key: `${row}-${col}`,
-      opacity: Math.max(0.12, Math.min(1, opacity)),
-      x: 8 + col * 12,
-      y: 8 + row * 12,
+      return { col, isAlt, key: `${row}-${col}`, localOpacity, row, x, y }
     }
-  })
+  )
 
   return (
-    <svg height="118" viewBox="0 0 290 118" width="100%">
-      {marks.map((mark) => (
-        <rect
-          fill={foreground}
-          height="9"
-          key={mark.key}
-          opacity={mark.opacity}
-          rx="1.5"
-          width="9"
-          x={mark.x}
-          y={mark.y}
-        />
-      ))}
+    <svg
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+      width="100%"
+    >
+      {items.map(({ col, isAlt, key, localOpacity, row, x, y }) => {
+        const extraRotation = resolvedSettings.checkerFlip && isAlt ? 180 : 0
+        const skew = `skewX(${resolvedSettings.skewX}) skewY(${resolvedSettings.skewY})`
+        const translateX = pattern.id === 'pattern-11' ? -54.5 : -resolvedSettings.tileSize / 2
+        const translateY = pattern.id === 'pattern-11' ? -73 : -resolvedSettings.tileSize / 2
+
+        return (
+          <g
+            key={key}
+            opacity={localOpacity}
+            transform={`translate(${x + resolvedSettings.tileSize / 2} ${y + resolvedSettings.tileSize / 2}) rotate(${resolvedSettings.rotation + extraRotation}) ${skew} scale(${resolvedSettings.motifScale}) translate(${translateX} ${translateY})`}
+          >
+            {pattern.renderMotif(resolvedSettings, { col, isAlt, row })}
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -127,7 +149,15 @@ function AppCardFront(props: {
   lastName?: string
   skipAutoFit?: boolean
 }) {
-  const { card, color, compactLayout = false, firstName, foreground, lastName, skipAutoFit = false } = props
+  const {
+    card,
+    color,
+    compactLayout = false,
+    firstName,
+    foreground,
+    lastName,
+    skipAutoFit = false,
+  } = props
   const layout = compactLayout ? CARD_LAYOUT.gallery : CARD_LAYOUT.default
   const [fallbackFirstLine, fallbackSecondLine] = splitNameLines(card.title)
   const firstLine = firstName ?? fallbackFirstLine
@@ -281,7 +311,7 @@ function AppCardFront(props: {
         transition={'background-color 0.6s ease'}
         bg={color}
       >
-        <Box inset="0" opacity="0.28" position="absolute">
+        <Box inset="0" opacity="0.28" position="absolute" top={0} bottom={0} left={0} right={0}>
           <SelectorPattern color={color} settings={card.patternSettings} />
         </Box>
 
@@ -372,7 +402,6 @@ function AppCardFront(props: {
             </Text>
           </Box>
         </Stack>
-
       </Box>
     </Box>
   )

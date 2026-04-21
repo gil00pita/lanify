@@ -31,19 +31,34 @@ export interface UserProfile {
 
 export interface PatternSettings {
   amplitude: number
+  alternateOpacity: boolean
   animate: boolean
   animationSpeed: number
+  background: string
+  checkerFlip: boolean
+  cols: number
+  fill: string
   frequency: number
+  gap: number
   itemSpacing: number
   itemsPerRow: number
   maxOpacity: number
   minOpacity: number
+  motifScale: number
+  offsetX: number
+  offsetY: number
+  patternId: 'pattern-01' | 'pattern-11'
   phaseOffset: number
   rotation: number
   rowSpacing: number
   rows: number
   scale: number
   seed: number
+  skewX: number
+  skewY: number
+  stroke: string
+  strokeWidth: number
+  tileSize: number
 }
 
 export interface SignaturePoint {
