@@ -1,4 +1,5 @@
 import type { CardDesign, PatternSettings, User, UserProfile } from '@/types/domain'
+import { createDefaultLanyardFinish } from '@/lib/lanyard-finish'
 import { getDefaultPatternSettings } from '@/lib/pattern-presets'
 
 export const SEEDED_USER: User = {
@@ -50,6 +51,7 @@ export const SEEDED_PROFILE: UserProfile = {
 
 export function createDraftCard(userId: string, profile: UserProfile): CardDesign {
   const timestamp = new Date().toISOString()
+  const lanyardColor = '#5236AB'
 
   return {
     cardHolderColor: '#333333',
@@ -57,7 +59,8 @@ export function createDraftCard(userId: string, profile: UserProfile): CardDesig
     hasBeenPrinted: false,
     id: `card_${Math.random().toString(36).slice(2, 10)}`,
     isLocked: false,
-    lanyardColor: '#5236AB',
+    lanyardColor,
+    lanyardFinish: createDefaultLanyardFinish(lanyardColor),
     patternSettings: DEFAULT_PATTERN_SETTINGS,
     patternType: 'sine-wave',
     portraitImage: profile.avatarTransparentUrl ?? profile.avatarUrl,

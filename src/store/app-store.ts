@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import { canEditCard, getNextPrintPrice } from '@/lib/domain/card-rules'
+import { normalizeLanyardFinish } from '@/lib/lanyard-finish'
 import { createDraftCard, SEEDED_PROFILE, SEEDED_USER } from '@/lib/mock-data'
 import type {
   AuthState,
@@ -50,6 +51,7 @@ function stripDataUrl(value: string | null) {
 function sanitizePersistedCard(card: CardDesign): CardDesign {
   return {
     ...card,
+    lanyardFinish: normalizeLanyardFinish(card.lanyardColor, card.lanyardFinish),
     portraitImage: stripDataUrl(card.portraitImage),
     signatureData:
       card.signatureData && !card.signatureData.dataUrl.startsWith('data:')

@@ -15,17 +15,11 @@ interface Props {
   style?: CSSProperties
 }
 
-function getRenderScaleSignature(style: CSSProperties | undefined) {
+function getLayoutSignature(style: CSSProperties | undefined) {
   const cssWidth = Number.parseFloat(`${style?.width ?? 0}`)
   const cssHeight = Number.parseFloat(`${style?.height ?? 0}`)
-  const transform =
-    typeof style?.transform === 'string' && style.transform !== 'none'
-      ? new DOMMatrix(style.transform)
-      : new DOMMatrix()
-  const scaleX = Math.hypot(transform.a, transform.b) || 1
-  const scaleY = Math.hypot(transform.c, transform.d) || 1
 
-  return `${cssWidth}:${cssHeight}:${scaleX}:${scaleY}`
+  return `${cssWidth}:${cssHeight}`
 }
 
 function getOutlineWidthInSourcePixels(
@@ -117,7 +111,9 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
   ) => {
     const imageRef = useRef<HTMLImageElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const renderScaleSignature = getRenderScaleSignature(style)
+    // Ignore transform-only changes from cropper zoom. Redrawing the full filtered
+    // source canvas on every zoom step is expensive and causes browser stalls.
+    const layoutSignature = getLayoutSignature(style)
 
     const drawImage = () => {
       const image = imageRef.current
@@ -176,7 +172,7 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
       contrast,
       outlineColor,
       outlineWidth,
-      renderScaleSignature,
+      layoutSignature,
     ])
 
     return (

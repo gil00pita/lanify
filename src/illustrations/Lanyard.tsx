@@ -1,16 +1,20 @@
 import { Icon } from '@chakra-ui/react'
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 interface Props {
   className?: string
+  defs?: ReactNode
   width?: string
   height?: string
+  paint?: string
 }
 
 export const ZoomPlusIcon: FC<Props> = ({
   className,
+  defs,
   width = '150px',
   height = '196px',
+  paint,
   ...props
 }) => {
   return (
@@ -24,9 +28,10 @@ export const ZoomPlusIcon: FC<Props> = ({
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
+      {defs}
       <path
         d="M135.905 0L149.848 23.5635L87 158.068V193.784C87 195.007 86.0505 196 84.8809 196H65.1191C63.9496 196 63 195.007 63 193.784V158.068L0 23.5635L13.5352 0H135.905ZM74.9541 132.149L126.274 20.8818H23.2402L74.9541 132.149Z"
-        fill="currentColor"
+        fill={paint || 'currentColor'}
       />
       <g opacity="0.2" style={{ mixBlendMode: 'multiply' }}>
         <path d="M87 163H63V178H87V163Z" fill="#333333" />

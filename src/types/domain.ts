@@ -76,6 +76,23 @@ export interface Signature {
   strokes: SignatureStroke[]
 }
 
+export type LanyardFinishMode = 'solid' | 'gradient' | 'pattern'
+
+export type LanyardGradientDirection = 'vertical' | 'horizontal' | 'diagonal'
+
+export type LanyardPatternStyle = 'stripes' | 'dots' | 'checker'
+
+export interface LanyardFinish {
+  gradientDirection: LanyardGradientDirection
+  gradientFrom: string
+  gradientTo: string
+  mode: LanyardFinishMode
+  patternAccent: string
+  patternBase: string
+  patternStyle: LanyardPatternStyle
+  solidColor: string
+}
+
 export interface CardDesign {
   cardHolderColor: string
   createdAt: string
@@ -83,6 +100,7 @@ export interface CardDesign {
   id: string
   isLocked: boolean
   lanyardColor: string
+  lanyardFinish: LanyardFinish
   patternSettings: PatternSettings
   patternType: 'sine-wave'
   portraitImage: string | null
