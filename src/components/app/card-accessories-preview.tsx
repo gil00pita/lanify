@@ -14,45 +14,37 @@ export function CardAccessoriesPreview(props: { card: CardDesign }) {
   const lanyardColor = card.lanyardColor || colors.purple6
 
   return (
-    <Box
-      mx="auto"
-      position="relative"
-      pt={{ base: '28', md: '32' }}
-      w={{ base: '280px', md: '340px' }}
-    >
+    <Box mx="auto" position="relative" className="card-container">
       <Box
         color={lanyardColor}
         left="50%"
         pointerEvents="none"
         position="absolute"
-        top="0"
+        top="-354px"
         transform="translateX(-50%)"
-        zIndex="0"
+        zIndex="2"
+        className="lanyard-illustration-container"
+        filter={'drop-shadow(2px 2px 12px {colors.gray.800/50})'}
       >
-        <LanyardIllustration height="196px" width="150px" />
+        <LanyardIllustration height="328px" width="336px" />
       </Box>
-
-      <Box position="relative">
-        <Box
-          insetX={{ base: '20px', md: '24px' }}
-          pb={{ base: '4px', md: '6px' }}
-          position="relative"
-          zIndex="1"
-        >
-          <CardPreview card={card} emphasis="focused" boxShadow="none" />
-        </Box>
-
-        <Box
-          height="464px"
-          width="286px"
-          top="-60px"
-          color={cardHolderColor}
-          pointerEvents="none"
-          position="absolute"
-          zIndex="0"
-        >
-          <CardHolderIllustration height="100%" width="100%" />
-        </Box>
+      <Box insetX={0} p={0} position="relative" zIndex="1">
+        <CardPreview card={card} emphasis="focused" boxShadow="none" />
+      </Box>
+      <Box
+        height="464px"
+        width="286px"
+        top="50px"
+        color={cardHolderColor}
+        pointerEvents="none"
+        position="absolute"
+        zIndex="0"
+        top="-15%"
+        left="50%"
+        transform="translateX(-50%)"
+        className="illustration-container"
+      >
+        <CardHolderIllustration height="100%" width="100%" />
       </Box>
     </Box>
   )
