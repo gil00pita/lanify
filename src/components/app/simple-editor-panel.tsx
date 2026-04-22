@@ -14,7 +14,6 @@ import {
   VStack,
   parseColor,
 } from '@chakra-ui/react'
-import { useRouter } from 'next/navigation'
 
 import { colors } from '@/lib/variations'
 import {
@@ -153,7 +152,6 @@ export function SimpleEditorPanel() {
   const activeDraft = useAppStore((state) => state.activeDraft)
   const updateDraft = useAppStore((state) => state.updateDraft)
   const saveDraft = useAppStore((state) => state.saveDraft)
-  const router = useRouter()
 
   if (!activeDraft) {
     return ''
@@ -505,9 +503,6 @@ export function SimpleEditorPanel() {
 
       <HStack gap="3">
         <Button onClick={() => saveDraft()}>Save to library</Button>
-        <Button onClick={() => router.push('/editor/advanced')} variant="outline">
-          Open advanced mode
-        </Button>
       </HStack>
     </Stack>
   )

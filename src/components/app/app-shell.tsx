@@ -15,7 +15,6 @@ const navItems = [
   { href: '/wizard', label: 'Wizard' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/editor', label: 'Editor' },
-  { href: '/editor/advanced', label: 'Advanced' },
   { href: '/profile', label: 'Profile' },
   { href: '/print-request', label: 'Print Request' },
 ]

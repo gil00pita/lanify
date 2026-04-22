@@ -1,20 +1,6 @@
+import { getDefaultPatternSettings, type PatternPresetId } from '@/lib/pattern-presets'
 import { createDraftCard } from '@/lib/mock-data'
 import type { CardDesign, GeneratedVariation, PatternSettings, UserProfile } from '@/types/domain'
-
-const variationDeltas = [
-  { amplitude: -0.15, frequency: -0.1, itemsPerRow: -2, rows: -1, seed: 3 },
-  { amplitude: 0.1, frequency: 0.18, itemsPerRow: 2, rows: 1, seed: 7 },
-  { maxOpacity: -0.1, minOpacity: 0.02, phaseOffset: 0.4, seed: 13 },
-  { rotation: -12, rowSpacing: 4, scale: 1.05, seed: 17 },
-  { amplitude: 0.2, frequency: -0.2, itemSpacing: 6, seed: 19 },
-  { maxOpacity: 0.03, minOpacity: -0.03, rotation: 8, rows: 2, seed: 29 },
-  { amplitude: -0.22, frequency: 0.22, itemSpacing: 5, seed: 31 },
-  { maxOpacity: -0.08, minOpacity: 0.04, phaseOffset: -0.7, seed: 37 },
-  { frequency: 0.32, itemSpacing: -2, itemsPerRow: 3, seed: 41 },
-  { amplitude: 0.12, rotation: -14, rows: 3, seed: 47 },
-  { maxOpacity: 0.02, minOpacity: -0.02, rowSpacing: -2, seed: 53 },
-  { amplitude: -0.05, frequency: -0.28, scale: 0.92, seed: 59 },
-]
 
 export const colors = {
   magenta1: '#CB7CA3',
@@ -47,58 +33,87 @@ export const colors = {
   commonWhite: '#FFFFFF',
 }
 
-export const variationColors = [
-  colors.brandPurple,
-  colors.purple3,
-  colors.dataShadesGreen,
-  colors.magenta3,
-  colors.purple1,
-  colors.red1,
-  colors.purple7,
-  colors.red5,
-  colors.gray3,
-  colors.brandRed,
-  colors.gray7,
-  colors.magenta1,
-  colors.red2,
-  colors.dataShadesYellow,
-  colors.purple6,
-  colors.gray4,
-  colors.red3,
-  colors.purple2,
-  colors.gray2,
-  colors.magenta2,
-  colors.purple4,
-  colors.gray5,
-  colors.dataShadesRed,
-  colors.purple5,
-  colors.gray1,
-  colors.red4,
-  colors.gray6,
-  colors.red6,
-  colors.red7,
-]
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value))
+type VariationRecipe = {
+  pattern: Partial<PatternSettings>
+  patternId: PatternPresetId
+  primaryColor: string
 }
 
-function mutateSettings(base: PatternSettings, delta: Partial<PatternSettings>) {
+const variationRecipes: VariationRecipe[] = [
+  {
+    patternId: 'pattern-01',
+    primaryColor: colors.purple7,
+    pattern: { fill: colors.purple4, opacity: 0.72, rows: 8, cols: 8, tileSize: 42 },
+  },
+  {
+    patternId: 'pattern-11',
+    primaryColor: colors.purple1,
+    pattern: { fill: colors.commonWhite, stroke: colors.purple3, opacity: 0.88, rows: 3, cols: 4 },
+  },
+  {
+    patternId: 'pattern-01',
+    primaryColor: colors.red5,
+    pattern: { fill: colors.red2, stroke: colors.commonWhite, strokeWidth: 0.8, opacity: 0.78 },
+  },
+  {
+    patternId: 'pattern-11',
+    primaryColor: colors.magenta3,
+    pattern: { fill: colors.red1, stroke: colors.commonWhite, opacity: 0.82, rotation: 90 },
+  },
+  {
+    patternId: 'pattern-01',
+    primaryColor: colors.dataShadesGreen,
+    pattern: { fill: colors.commonWhite, opacity: 0.68, gap: 6, motifScale: 0.92, rotation: 180 },
+  },
+  {
+    patternId: 'pattern-11',
+    primaryColor: colors.gray7,
+    pattern: { fill: colors.gray2, stroke: colors.gray1, opacity: 0.76, rotation: 180 },
+  },
+  {
+    patternId: 'pattern-01',
+    primaryColor: colors.red4,
+    pattern: { fill: colors.red7, opacity: 0.7, alternateOpacity: false, tileSize: 48, rotation: 270 },
+  },
+  {
+    patternId: 'pattern-11',
+    primaryColor: colors.purple6,
+    pattern: { fill: colors.purple2, stroke: colors.commonWhite, opacity: 0.8, rows: 4, cols: 4 },
+  },
+  {
+    patternId: 'pattern-01',
+    primaryColor: colors.gray1,
+    pattern: { fill: colors.gray6, stroke: colors.gray7, strokeWidth: 0.6, opacity: 0.62, gap: 10 },
+  },
+  {
+    patternId: 'pattern-11',
+    primaryColor: colors.dataShadesYellow,
+    pattern: { fill: colors.commonWhite, stroke: colors.red4, opacity: 0.74, rotation: 270 },
+  },
+  {
+    patternId: 'pattern-01',
+    primaryColor: colors.magenta1,
+    pattern: { fill: colors.magenta3, opacity: 0.8, tileSize: 38, motifScale: 1.1, gap: 4 },
+  },
+  {
+    patternId: 'pattern-11',
+    primaryColor: colors.red7,
+    pattern: { fill: colors.red2, stroke: colors.red1, opacity: 0.84, rows: 3, cols: 5 },
+  },
+]
+
+function buildPatternVariation(
+  baseSettings: PatternSettings,
+  recipe: VariationRecipe
+): PatternSettings {
+  const presetDefaults = getDefaultPatternSettings(recipe.patternId)
+
   return {
-    ...base,
-    ...delta,
-    amplitude: clamp((base.amplitude ?? 1) + (delta.amplitude ?? 0), 0.1, 2),
-    frequency: clamp((base.frequency ?? 1) + (delta.frequency ?? 0), 0.1, 3),
-    itemSpacing: clamp((base.itemSpacing ?? 12) + (delta.itemSpacing ?? 0), 8, 28),
-    itemsPerRow: clamp((base.itemsPerRow ?? 14) + (delta.itemsPerRow ?? 0), 8, 30),
-    maxOpacity: clamp((base.maxOpacity ?? 0.9) + (delta.maxOpacity ?? 0), 0.2, 1),
-    minOpacity: clamp((base.minOpacity ?? 0.1) + (delta.minOpacity ?? 0), 0, 0.5),
-    phaseOffset: clamp((base.phaseOffset ?? 0) + (delta.phaseOffset ?? 0), -6, 6),
-    rotation: clamp((base.rotation ?? 0) + (delta.rotation ?? 0), -30, 30),
-    rowSpacing: clamp((base.rowSpacing ?? 16) + (delta.rowSpacing ?? 0), 8, 30),
-    rows: clamp((base.rows ?? 10) + (delta.rows ?? 0), 6, 20),
-    scale: clamp((base.scale ?? 1) + ((delta.scale ?? 1) - 1), 0.75, 1.5),
-    seed: (base.seed + (delta.seed ?? 0)) % 997,
+    ...baseSettings,
+    ...presetDefaults,
+    ...recipe.pattern,
+    background: recipe.primaryColor,
+    patternId: recipe.patternId,
   }
 }
 
@@ -106,7 +121,7 @@ export function generateSmartVariations(
   base: CardDesign,
   profile: UserProfile
 ): GeneratedVariation[] {
-  return variationDeltas.map((delta, index) => {
+  return variationRecipes.map((recipe, index) => {
     const seededFromProfile = createDraftCard(base.userId, profile)
 
     return {
@@ -114,9 +129,9 @@ export function generateSmartVariations(
         ...seededFromProfile,
         ...base,
         id: `${base.id}_variation_${index + 1}`,
-        patternSettings: mutateSettings(base.patternSettings, delta),
+        patternSettings: buildPatternVariation(base.patternSettings, recipe),
         portraitImage: seededFromProfile.portraitImage,
-        primaryColor: variationColors[index % variationColors.length],
+        primaryColor: recipe.primaryColor,
         subtitle: profile.role,
         title: profile.displayName,
       },
