@@ -14,6 +14,7 @@ import {
   VStack,
   parseColor,
 } from '@chakra-ui/react'
+import { useRouter } from 'next/navigation'
 
 import { colors } from '@/lib/variations'
 import {
@@ -150,8 +151,8 @@ function SliderField(props: {
 
 export function SimpleEditorPanel() {
   const activeDraft = useAppStore((state) => state.activeDraft)
+  const router = useRouter()
   const updateDraft = useAppStore((state) => state.updateDraft)
-  const saveDraft = useAppStore((state) => state.saveDraft)
 
   if (!activeDraft) {
     return ''
@@ -502,7 +503,7 @@ export function SimpleEditorPanel() {
       ) : null}
 
       <HStack gap="3">
-        <Button onClick={() => saveDraft()}>Save to library</Button>
+        <Button onClick={() => router.push('/editor/accessories')}>Choose holder & lanyard</Button>
       </HStack>
     </Stack>
   )

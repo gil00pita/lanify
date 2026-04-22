@@ -77,10 +77,12 @@ export interface Signature {
 }
 
 export interface CardDesign {
+  cardHolderColor: string
   createdAt: string
   hasBeenPrinted: boolean
   id: string
   isLocked: boolean
+  lanyardColor: string
   patternSettings: PatternSettings
   patternType: 'sine-wave'
   portraitImage: string | null

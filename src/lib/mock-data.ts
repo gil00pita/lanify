@@ -52,10 +52,12 @@ export function createDraftCard(userId: string, profile: UserProfile): CardDesig
   const timestamp = new Date().toISOString()
 
   return {
+    cardHolderColor: '#333333',
     createdAt: timestamp,
     hasBeenPrinted: false,
     id: `card_${Math.random().toString(36).slice(2, 10)}`,
     isLocked: false,
+    lanyardColor: '#5236AB',
     patternSettings: DEFAULT_PATTERN_SETTINGS,
     patternType: 'sine-wave',
     portraitImage: profile.avatarTransparentUrl ?? profile.avatarUrl,

@@ -489,6 +489,7 @@ export function AppCard(props: AppCardProps) {
             foreground={foreground}
             lastName={lastName}
             skipAutoFit={skipAutoFit}
+            {...props}
           />
         </Box>
       </Box>
