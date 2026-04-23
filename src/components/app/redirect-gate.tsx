@@ -6,14 +6,12 @@ import { Box, Spinner, Text, VStack } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { useHydrated } from '@/components/app/use-hydrated'
-import { isFirstTimeUser } from '@/lib/domain/card-rules'
 import { useAppStore } from '@/store/app-store'
 
 export function RedirectGate() {
   const hydrated = useHydrated()
   const router = useRouter()
   const auth = useAppStore((state) => state.auth)
-  const cards = useAppStore((state) => state.cards)
 
   useEffect(() => {
     if (!hydrated) {
@@ -25,8 +23,8 @@ export function RedirectGate() {
       return
     }
 
-    router.replace(isFirstTimeUser(cards) ? '/wizard' : '/library')
-  }, [auth.isAuthenticated, cards, hydrated, router])
+    router.replace('/wizard')
+  }, [auth.isAuthenticated, hydrated, router])
 
   return (
     <Box display="grid" minH="100vh" placeItems="center">

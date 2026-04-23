@@ -11,7 +11,6 @@ import { useAppStore } from '@/store/app-store'
 const MotionBox = motion.create(Box)
 
 const navItems = [
-  { href: '/library', label: 'Library' },
   { href: '/wizard', label: 'Wizard' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/editor', label: 'Editor' },

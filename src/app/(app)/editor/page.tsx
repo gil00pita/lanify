@@ -107,7 +107,7 @@ export default function EditorPage() {
               </Box>
             </Stack>
             <HStack gap="3" mt={3} w={'full'} justifyContent="flex-end">
-              <Button onClick={() => router.push('/editor/accessories')}>
+              <Button onClick={() => router.push('/accessories')}>
                 Save & continue
                 <LongArrowIcon />
               </Button>

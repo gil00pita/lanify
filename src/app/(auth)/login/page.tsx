@@ -6,7 +6,6 @@ import { Box, Button, Input, Stack, Text } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { useHydrated } from '@/components/app/use-hydrated'
-import { isFirstTimeUser } from '@/lib/domain/card-rules'
 import { useAppStore } from '@/store/app-store'
 
 export default function LoginPage() {
@@ -14,15 +13,14 @@ export default function LoginPage() {
   const hydrated = useHydrated()
   const login = useAppStore((state) => state.login)
   const auth = useAppStore((state) => state.auth)
-  const cards = useAppStore((state) => state.cards)
   const [email, setEmail] = useState('member@lanyard.app')
   const [password, setPassword] = useState('password')
 
   useEffect(() => {
     if (hydrated && auth.isAuthenticated) {
-      router.replace(isFirstTimeUser(cards) ? '/wizard' : '/library')
+      router.replace('/wizard')
     }
-  }, [auth.isAuthenticated, cards, hydrated, router])
+  }, [auth.isAuthenticated, hydrated, router])
 
   return (
     <Box display="grid" minH="100vh" placeItems="center" px="4">
@@ -42,8 +40,8 @@ export default function LoginPage() {
           Design premium lanyard cards in minutes
         </Text>
         <Text color="var(--lanyard-muted)">
-          Mock auth is active for now. Any valid-looking login will open your personal design
-          library or take you straight into the first card wizard.
+          Mock auth is active for now. Any valid-looking login will take you straight into the
+          card creation wizard.
         </Text>
         <Box>
           <Text fontWeight="600" mb="2">
@@ -64,7 +62,7 @@ export default function LoginPage() {
         <Button
           onClick={() => {
             login(email)
-            router.push(isFirstTimeUser(cards) ? '/wizard' : '/library')
+            router.push('/wizard')
           }}
           size="lg"
         >

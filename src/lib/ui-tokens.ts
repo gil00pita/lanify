@@ -6,6 +6,6 @@ export const PRINT_CARD_ASPECT_RATIO = PRINT_CARD_WIDTH_MM / PRINT_CARD_HEIGHT_M
 
 export const frostedGlass = {
   backdropFilter: 'blur(24px)',
-  bg: 'linear-gradient(135deg, rgb(229 220 247 / 86%) 0%, rgba(255, 255, 255, 0.78) 38%, rgba(255, 255, 255, 0.72) 100%)',
+  bg: 'linear-gradient(135deg, rgba(236, 233, 243, 0.96) 0%, rgba(255, 255, 255, 0.78) 38%, rgba(255, 255, 255, 0.72) 100%)',
   boxShadow: '0 30px 90px rgba(30,27,22,0.16)',
 } as const

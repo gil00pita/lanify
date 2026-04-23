@@ -312,10 +312,10 @@ export default function EditorAccessoriesPage() {
                 <Button
                   onClick={() => {
                     saveDraft()
-                    router.push('/library')
+                    router.push('/submitted')
                   }}
                 >
-                  Save & Submit for aproval
+                  Save & Submit for approval
                   <Send width="18px" height="18px" ml="2" />
                 </Button>
               </HStack>

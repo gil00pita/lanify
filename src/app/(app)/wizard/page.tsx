@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 
-import { Alert, Box, Button, Grid, Heading, HStack, Stack, Text, VStack } from '@chakra-ui/react'
+import { Alert, Box, Button, Grid, Heading, Stack, Text, VStack } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
+import { Avatar } from '@/illustrations/Avatar'
 import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-modal'
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
 import { frostedGlass } from '@/lib/ui-tokens'
@@ -17,10 +18,29 @@ const sampleCards = [
   { accent: '#2496ca', foreground: '#eef8fe' },
   { accent: '#1f1d1d', foreground: '#fbf5e8' },
   { accent: '#dd4215', foreground: '#fff1df' },
+  { accent: '#564c37', foreground: '#f1ebdf' },
   { accent: '#2c96d0', foreground: '#eaf6fc' },
   { accent: '#a7f0ef', foreground: '#2c6170' },
   { accent: '#304ce9', foreground: '#edf1ff' },
   { accent: '#8b0089', foreground: '#f8d9ff' },
+  { accent: '#f06925', foreground: '#fff0df' },
+  { accent: '#046f0d', foreground: '#e8fce7' },
+  { accent: '#f06925', foreground: '#fff0df' },
+  { accent: '#046f0d', foreground: '#e8fce7' },
+  { accent: '#564c37', foreground: '#f1ebdf' },
+  { accent: '#54ef8c', foreground: '#173c20' },
+  { accent: '#2496ca', foreground: '#eef8fe' },
+  { accent: '#1f1d1d', foreground: '#fbf5e8' },
+  { accent: '#8b0089', foreground: '#f8d9ff' },
+  { accent: '#dd4215', foreground: '#fff1df' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
+  { accent: '#1f1d1d', foreground: '#fbf5e8' },
+  { accent: '#dd4215', foreground: '#fff1df' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
+  { accent: '#a7f0ef', foreground: '#2c6170' },
+  { accent: '#304ce9', foreground: '#edf1ff' },
+  { accent: '#8b0089', foreground: '#f8d9ff' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
   { accent: '#f06925', foreground: '#fff0df' },
   { accent: '#046f0d', foreground: '#e8fce7' },
   { accent: '#564c37', foreground: '#f1ebdf' },
@@ -31,62 +51,90 @@ function BackgroundSampleCard(props: { accent: string; foreground: string }) {
     <Box
       bg={props.accent}
       borderRadius="24px"
-      boxShadow="0 12px 26px rgba(17,16,13,0.14)"
+      border="1px solid rgba(255,255,255,0.7)"
+      boxShadow="0 28px 44px rgba(17,16,13,0.16)"
       color={props.foreground}
-      h={{ base: '180px', md: '250px' }}
-      p={{ base: '4', md: '5' }}
+      h={'390px'}
+      overflow="hidden"
       position="relative"
-      w="100%"
+      w="240px"
     >
-      <Stack gap="2">
-        <Text
-          fontFamily="Georgia, serif"
-          fontSize={{ base: 'lg', md: '2xl' }}
-          fontWeight="500"
-          lineHeight="1"
+      <Box h="64%" insetX="0" position="absolute" top="0">
+        <Box
+          bg="linear-gradient(135deg, rgba(255,255,255,0.12), transparent 55%)"
+          inset="0"
+          opacity="0.9"
+          position="absolute"
+        />
+        <Box inset="0" opacity="0.2" position="absolute">
+          <Grid
+            gap={{ base: '2', md: '3' }}
+            h="100%"
+            p={{ base: '3', md: '4' }}
+            templateColumns="repeat(6, 1fr)"
+            templateRows="repeat(5, 1fr)"
+            w="100%"
+          >
+            {Array.from({ length: 30 }, (_, index) => (
+              <Box
+                bg="rgba(255,255,255,0.34)"
+                borderRadius="4px"
+                key={index}
+                transform={index % 2 === 0 ? 'scale(0.78)' : 'scale(0.58)'}
+              />
+            ))}
+          </Grid>
+        </Box>
+        <Box
+          alignItems="flex-end"
+          color="rgba(255,255,255,0.92)"
+          display="flex"
+          h="100%"
+          justifyContent="center"
+          insetX="14%"
+          position="absolute"
+          top="0"
         >
-          Interface Craft
-        </Text>
-        <Text
-          fontFamily="Georgia, serif"
-          fontSize={{ base: '2xl', md: '4xl' }}
-          fontWeight="500"
-          lineHeight="0.95"
-        >
-          Example Card
-        </Text>
-      </Stack>
-      <Box bottom="20px" left="20px" position="absolute" right="20px">
-        <HStack justify="space-between">
+          <Avatar height="82%" width="82%" />
+        </Box>
+      </Box>
+
+      <Box
+        bg="rgba(250,249,246,0.98)"
+        bottom="-1px"
+        clipPath="polygon(0 0, 72% 0, 84% 16%, 100% 16%, 100% 100%, 0 100%)"
+        color="#1b1813"
+        left="0"
+        pb={{ base: '4', md: '5' }}
+        position="absolute"
+        pt={{ base: '3', md: '4' }}
+        px={{ base: '4', md: '5' }}
+        right="0"
+        top="58%"
+      >
+        <Stack gap={{ base: '2', md: '3' }} h="full" justify="space-between">
           <Stack gap="1">
             <Text
-              fontSize="xs"
-              fontWeight="700"
-              letterSpacing="0.18em"
-              opacity="0.65"
-              textTransform="uppercase"
+              fontSize={{ base: '2xl', md: '4xl' }}
+              fontWeight="600"
+              letterSpacing="-0.05em"
+              lineHeight="0.92"
             >
-              Member
+              Jamie
             </Text>
-            <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700">
-              New Member
-            </Text>
-          </Stack>
-          <Stack gap="1" textAlign="right">
             <Text
-              fontSize="xs"
-              fontWeight="700"
-              letterSpacing="0.18em"
-              opacity="0.65"
-              textTransform="uppercase"
+              fontSize={{ base: '2xl', md: '4xl' }}
+              fontWeight="600"
+              letterSpacing="-0.05em"
+              lineHeight="0.92"
             >
-              Issued On
-            </Text>
-            <Text fontSize={{ base: 'md', md: 'xl' }} fontWeight="700">
-              02/25/26
+              Rivera
             </Text>
           </Stack>
-        </HStack>
+          <Text color="rgba(27,24,19,0.76)" fontSize={{ base: 'sm', md: 'lg' }} lineHeight="1.05">
+            Product Designer
+          </Text>
+        </Stack>
       </Box>
     </Box>
   )
@@ -121,7 +169,12 @@ export default function WizardPage() {
         gap={{ base: '4', md: '8' }}
         opacity="0.92"
         p={{ base: '6', md: '10' }}
-        templateColumns={{ base: 'repeat(4, 1fr)', lg: 'repeat(10, 1fr)' }}
+        templateColumns={{
+          base: 'repeat(3, 240px)',
+          md: 'repeat(4, 240px)',
+          lg: 'repeat(6, 240px)',
+          xl: 'repeat(8, 240px)',
+        }}
         templateRows={{ base: 'repeat(3, 1fr)' }}
       >
         {sampleCards.map((card, index) => (
