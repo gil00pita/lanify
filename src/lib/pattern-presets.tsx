@@ -47,6 +47,7 @@ type PatternPreset = {
     | 'tileSize'
   >
   id: PatternPresetId
+  image: ReactNode
   name: string
   renderMotif: (
     settings: PatternSettings,
@@ -84,7 +85,7 @@ export const PATTERN_PRESETS: PatternPreset[] = [
       rotation: true,
       fill: true,
       stroke: true,
-      strokeWidth: true,
+      strokeWidth: false,
       opacity: true,
       gap: true,
       rows: true,
@@ -116,7 +117,7 @@ export const PATTERN_PRESETS: PatternPreset[] = [
       motifScale: 1,
       rotation: 0,
       fill: '#EFF0F3',
-      stroke: '#EAEBEC',
+      stroke: '#EFF0F3',
       strokeWidth: 0,
       opacity: 1,
       gap: 0,
@@ -135,7 +136,7 @@ export const PATTERN_PRESETS: PatternPreset[] = [
       motifScale: true,
       rotation: true,
       fill: true,
-      stroke: true,
+      stroke: false,
       strokeWidth: false,
       opacity: true,
       gap: true,

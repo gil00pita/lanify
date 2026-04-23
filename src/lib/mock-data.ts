@@ -1,6 +1,9 @@
 import type { CardDesign, PatternSettings, User, UserProfile } from '@/types/domain'
+import { getContrastingPatternColor } from '@/lib/color-contrast'
 import { createDefaultLanyardFinish } from '@/lib/lanyard-finish'
 import { getDefaultPatternSettings } from '@/lib/pattern-presets'
+
+const DEFAULT_PATTERN_COLOR_CANDIDATES = ['#FFFFFF', '#000000', '#333333', '#5236AB', '#991F3D']
 
 export const SEEDED_USER: User = {
   email: 'member@lanyard.app',
@@ -43,16 +46,18 @@ export const DEFAULT_PATTERN_SETTINGS: PatternSettings = {
 export const SEEDED_PROFILE: UserProfile = {
   avatarTransparentUrl: null,
   avatarUrl: null,
-  displayName: 'Gil Alvaro',
-  firstName: 'Gil',
+  displayName: 'John Doe',
+  firstName: 'John',
   id: 'profile_seeded_lanyard',
-  lastName: 'Alvaro',
+  lastName: 'Doe',
   role: 'Product Designer',
 }
 
 export function createDraftCard(userId: string, profile: UserProfile): CardDesign {
   const timestamp = new Date().toISOString()
   const lanyardColor = '#5236AB'
+  const primaryColor = '#E7C676'
+  const patternColor = getContrastingPatternColor(primaryColor, DEFAULT_PATTERN_COLOR_CANDIDATES)
 
   return {
     cardHolderColor: '#333333',
@@ -62,10 +67,14 @@ export function createDraftCard(userId: string, profile: UserProfile): CardDesig
     isLocked: false,
     lanyardColor,
     lanyardFinish: createDefaultLanyardFinish(),
-    patternSettings: DEFAULT_PATTERN_SETTINGS,
+    patternSettings: {
+      ...DEFAULT_PATTERN_SETTINGS,
+      fill: patternColor,
+      stroke: patternColor,
+    },
     patternType: 'sine-wave',
     portraitImage: profile.avatarTransparentUrl ?? profile.avatarUrl,
-    primaryColor: '#E7C676',
+    primaryColor,
     signatureData: null,
     status: 'draft',
     subtitle: profile.role,

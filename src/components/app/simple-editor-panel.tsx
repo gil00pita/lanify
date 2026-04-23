@@ -7,16 +7,21 @@ import {
   ColorPicker,
   HStack,
   Input,
+  RadioCard,
   SimpleGrid,
   Slider,
   Stack,
   Switch,
   Text,
-  VStack,
   parseColor,
 } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
+import {
+  VISIBLE_PATTERN_CONTRAST_RATIO,
+  getContrastRatio,
+  getContrastingPatternColor,
+} from '@/lib/color-contrast'
 import { colors } from '@/lib/variations'
 import {
   PATTERN_PRESET_MAP,
@@ -54,6 +59,19 @@ const accentSwatches = [
 ]
 const rotationStops = [0, 90, 180, 270] as const
 
+function getPatternDefaultsForCard(
+  patternId: (typeof PATTERN_PRESETS)[number]['id'],
+  primaryColor: string
+) {
+  const patternColor = getContrastingPatternColor(primaryColor, accentSwatches)
+
+  return {
+    ...getDefaultPatternSettings(patternId),
+    fill: patternColor,
+    stroke: patternColor,
+  }
+}
+
 function normalizeColorValue(value: string) {
   const trimmedValue = value.trim()
 
@@ -82,11 +100,13 @@ function normalizeColorValue(value: string) {
 }
 
 function SwatchColorField(props: {
+  hiddenSwatches?: string[]
   label: string
   onValueChange: (value: string) => void
   value: string
 }) {
-  const { label, onValueChange, value } = props
+  const { hiddenSwatches = [], label, onValueChange, value } = props
+  const hiddenSwatchSet = new Set(hiddenSwatches.map(normalizeColorValue))
 
   return (
     <ColorPicker.Root
@@ -100,17 +120,19 @@ function SwatchColorField(props: {
         {label}
       </ColorPicker.Label>
       <ColorPicker.SwatchGroup maxW="460px">
-        {accentSwatches.map((swatch) => (
-          <ColorPicker.SwatchTrigger key={`${label}-${swatch}`} value={swatch}>
-            <ColorPicker.Swatch value={swatch}>
-              <ColorPicker.SwatchIndicator
-                boxSize="3"
-                bg="white"
-                border="1px solid {colors.border}"
-              />
-            </ColorPicker.Swatch>
-          </ColorPicker.SwatchTrigger>
-        ))}
+        {accentSwatches
+          .filter((swatch) => !hiddenSwatchSet.has(normalizeColorValue(swatch)))
+          .map((swatch) => (
+            <ColorPicker.SwatchTrigger key={`${label}-${swatch}`} value={swatch}>
+              <ColorPicker.Swatch value={swatch}>
+                <ColorPicker.SwatchIndicator
+                  boxSize="3"
+                  bg="white"
+                  border="1px solid {colors.border}"
+                />
+              </ColorPicker.Swatch>
+            </ColorPicker.SwatchTrigger>
+          ))}
       </ColorPicker.SwatchGroup>
     </ColorPicker.Root>
   )
@@ -165,6 +187,9 @@ export function SimpleEditorPanel() {
     ...activePattern.defaults,
     ...activeDraft.patternSettings,
   }
+  const hiddenPatternFillSwatches = accentSwatches.filter(
+    (swatch) => getContrastRatio(activeDraft.primaryColor, swatch) < VISIBLE_PATTERN_CONTRAST_RATIO
+  )
 
   return (
     <Stack gap="4">
@@ -173,12 +198,23 @@ export function SimpleEditorPanel() {
         <ColorPicker.Root
           alignItems="flex-start"
           defaultValue={parseColor('#fff')}
-          onValueChange={(details) =>
-            updateDraft((draft) => ({
-              ...draft,
-              primaryColor: normalizeColorValue(details.valueAsString),
-            }))
-          }
+          onValueChange={(details) => {
+            const primaryColor = normalizeColorValue(details.valueAsString)
+
+            updateDraft((draft) => {
+              const patternColor = getContrastingPatternColor(primaryColor, accentSwatches)
+
+              return {
+                ...draft,
+                primaryColor,
+                patternSettings: {
+                  ...draft.patternSettings,
+                  fill: patternColor,
+                  stroke: patternColor,
+                },
+              }
+            })
+          }}
           value={parseColor(normalizeColorValue(activeDraft.primaryColor))}
         >
           <ColorPicker.HiddenInput />
@@ -212,58 +248,86 @@ export function SimpleEditorPanel() {
           </Box>
         </HStack>
 
-        <SimpleGrid columns={{ base: 2, md: 4 }} gap="3">
-          {PATTERN_PRESETS.map((pattern) => {
-            const active = resolvedPatternSettings.patternId === pattern.id
+        <RadioCard.Root
+          colorPalette="primary"
+          onValueChange={(details) => {
+            const pattern = PATTERN_PRESETS.find((entry) => entry.id === details.value)
 
-            return (
-              <Button
-                key={pattern.id}
-                justifyContent="flex-start"
-                onClick={() =>
-                  updateDraft((draft) => ({
-                    ...draft,
-                    patternSettings: {
-                      ...draft.patternSettings,
-                      ...getDefaultPatternSettings(pattern.id),
-                    },
-                  }))
-                }
-                size="sm"
-                display={'flex'}
-                flexDirection={'column'}
-                height={'auto'}
-                variant={active ? 'solid' : 'outline'}
-                px={3}
-                py={3}
-                rounded={'2xl'}
-              >
-                <Box
-                  maxW={'64px'}
-                  rounded={'md'}
-                  overflow={'hidden'}
-                  border={'1px solid {colors.border/50}'}
-                  bgColor={'bg.muted'}
-                >
-                  {pattern.image}
-                </Box>
-                {pattern.name}
-              </Button>
-            )
-          })}
-        </SimpleGrid>
+            if (!pattern) {
+              return
+            }
+
+            updateDraft((draft) => ({
+              ...draft,
+              patternSettings: {
+                ...draft.patternSettings,
+                ...getPatternDefaultsForCard(pattern.id, draft.primaryColor),
+              },
+            }))
+          }}
+          orientation="horizontal"
+          value={resolvedPatternSettings.patternId}
+          variant="outline"
+        >
+          <HStack align="stretch" gap="3" flexWrap="wrap">
+            {PATTERN_PRESETS.map((pattern) => {
+              const isSelected = resolvedPatternSettings.patternId === pattern.id
+
+              return (
+                <RadioCard.Item key={pattern.id} value={pattern.id} flex={0}>
+                  <RadioCard.ItemHiddenInput />
+                  <RadioCard.ItemControl
+                    alignItems="center"
+                    display="flex"
+                    flexDirection="column"
+                    gap="2"
+                    h="auto"
+                    p="1"
+                    rounded="2xl"
+                  >
+                    <Box
+                      bgColor="bg.primary"
+                      border="1px solid {colors.border/50}"
+                      color={activeDraft.primaryColor}
+                      filter={isSelected ? 'none' : 'grayscale(1)'}
+                      opacity={isSelected ? 1 : 0.62}
+                      overflow="hidden"
+                      rounded="md"
+                      transition="filter 160ms ease, opacity 160ms ease"
+                    >
+                      {pattern.image}
+                    </Box>
+                    <RadioCard.ItemText srOnly>{pattern.name}</RadioCard.ItemText>
+                  </RadioCard.ItemControl>
+                </RadioCard.Item>
+              )
+            })}
+          </HStack>
+        </RadioCard.Root>
       </Box>
 
       <SwatchColorField
-        label="Fill"
+        hiddenSwatches={hiddenPatternFillSwatches}
+        label="Pattern color"
         onValueChange={(value) =>
-          updateDraft((draft) => ({
-            ...draft,
-            patternSettings: {
-              ...draft.patternSettings,
-              fill: value,
-            },
-          }))
+          updateDraft((draft) => {
+            const patternColor = getContrastingPatternColor(
+              draft.primaryColor,
+              accentSwatches,
+              value
+            )
+
+            return {
+              ...draft,
+              patternSettings: {
+                ...draft.patternSettings,
+                fill: patternColor,
+                ...(draft.patternSettings.patternId === 'pattern-02'
+                  ? { stroke: patternColor }
+                  : {}),
+              },
+            }
+          })
         }
         value={resolvedPatternSettings.fill}
       />
@@ -284,7 +348,10 @@ export function SimpleEditorPanel() {
                       ...draft,
                       patternSettings: {
                         ...draft.patternSettings,
-                        ...getDefaultPatternSettings(draft.patternSettings.patternId),
+                        ...getPatternDefaultsForCard(
+                          draft.patternSettings.patternId,
+                          draft.primaryColor
+                        ),
                       },
                     }))
                   }
@@ -294,7 +361,8 @@ export function SimpleEditorPanel() {
                   Reset pattern
                 </Button>
               </Stack>
-              <Stack gap="4">
+
+              <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
                 {activePattern.controls.tileSize ? (
                   <SliderField
                     label={`Tile size: ${resolvedPatternSettings.tileSize}`}
@@ -331,9 +399,7 @@ export function SimpleEditorPanel() {
                     value={resolvedPatternSettings.motifScale}
                   />
                 ) : null}
-              </Stack>
 
-              <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
                 <Box>
                   <Text fontWeight="600" mb="2">
                     Rotation: {resolvedPatternSettings.rotation} deg
@@ -472,22 +538,6 @@ export function SimpleEditorPanel() {
                   />
                 </Box>
               </SimpleGrid>
-
-              <VStack gap="4">
-                <SwatchColorField
-                  label="Stroke"
-                  onValueChange={(value) =>
-                    updateDraft((draft) => ({
-                      ...draft,
-                      patternSettings: {
-                        ...draft.patternSettings,
-                        stroke: value,
-                      },
-                    }))
-                  }
-                  value={resolvedPatternSettings.stroke}
-                />
-              </VStack>
 
               {activePattern.controls.strokeWidth ? (
                 <SliderField
