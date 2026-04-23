@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Button, HStack, Icon, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Heading, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
@@ -9,6 +9,8 @@ import { SimpleEditorPanel } from '@/components/app/simple-editor-panel'
 import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
 import { BackChev } from '@/icons/BackChev'
+import { LongArrowIcon } from '@/icons/LongArrowIcon'
+import { Palette } from '@/icons/Palette'
 
 const MotionBox = motion.create(Box)
 
@@ -27,53 +29,48 @@ export default function EditorPage() {
       <HStack gap="3" position="absolute" top="24px" left="24px" zIndex={'docked'}>
         <Button
           onClick={() => router.push('/gallery')}
-          variant="outline"
+          variant="solid"
           rounded={'full'}
-          {...frostedGlass}
+          gap={'4px'}
+          colorPalette={'primary'}
         >
           <BackChev width="14px" height="14px" />
           Back
         </Button>
-        <HStack py="2" px="4" gap={2} zIndex={'docked'} rounded={'2xl'} {...frostedGlass}>
-          <Icon
-            as="svg"
-            viewBox="0 0 24 24"
-            boxSize="20px"
-            color="fg.muted"
-            stroke="currentColor"
-            fill="none"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            height="16px"
-            width="16px"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-            ></path>
-          </Icon>
-          <Text fontSize="sm" color="var(--lanyard-muted)">
-            Customize your card.
-          </Text>
+        <HStack py="2" px="4" gap={2} zIndex={'docked'} rounded={'full'} {...frostedGlass}>
+          <Palette width="14px" height="14px" />
+          <Text fontSize="sm">Customize your card</Text>
         </HStack>
       </HStack>
-      <VStack position="relative" height={'100%'} justifyContent={'center'}>
+      <VStack
+        flex="1"
+        justifyContent="flex-start"
+        minH="0"
+        position="relative"
+        pt={{ base: '88px', md: '96px' }}
+        px={{ base: '4', md: '6' }}
+        pb={{ base: '4', md: '6' }}
+        w="full"
+      >
         <HStack
-          align="center"
-          justifyContent={'flex-start'}
+          align={{ base: 'stretch', xl: 'center' }}
+          flex="1"
+          justifyContent={'center'}
           flexDirection={{ base: 'column', xl: 'row' }}
           gap="8"
+          h="full"
+          minH="0"
+          w="full"
         >
           {activeDraft ? (
             <MotionBox
               animate={{ opacity: 1, scale: 1, x: 0 }}
               initial={{ opacity: 0, scale: 0.92, x: -48 }}
               transition={{ duration: 0.36, ease: 'easeOut' }}
+              flexShrink={0}
             >
               <CardPreview card={activeDraft} emphasis="focused" />
+              <Box height="40px" mt={3} />
             </MotionBox>
           ) : null}
 
@@ -81,24 +78,40 @@ export default function EditorPage() {
             animate={{ opacity: 1, x: 0 }}
             initial={{ opacity: 0, x: 44 }}
             transition={{ duration: 0.34, ease: 'easeOut', delay: 0.08 }}
+            minW="0"
+            minH="0"
+            w={{ base: 'full', xl: 'auto' }}
           >
             <Stack
               {...frostedGlass}
               border="1px solid rgba(255,255,255,0.72)"
               borderRadius="32px"
               gap="6"
+              maxH="calc(100dvh - 120px)"
+              minH="0"
               p={{ base: '5', md: '7' }}
+              w={{ base: 'full', md: 'min(560px, 100%)' }}
             >
               {activeDraft ? (
-                <Stack gap="4">
+                <Stack flexShrink={0} gap="4">
                   <Stack gap="2">
-                    <Text color="fg.muted">Customize your card design {activeDraft.title}.</Text>
+                    <Heading color={'primary.950'} fontWeight={700}>
+                      Customize your card
+                    </Heading>
                   </Stack>
                 </Stack>
               ) : null}
 
-              <SimpleEditorPanel />
+              <Box flex="1" minH="0" overflowY="auto" pe={{ base: '2', xl: '0' }}>
+                <SimpleEditorPanel />
+              </Box>
             </Stack>
+            <HStack gap="3" mt={3} w={'full'} justifyContent="flex-end">
+              <Button onClick={() => router.push('/editor/accessories')}>
+                Save & continue
+                <LongArrowIcon />
+              </Button>
+            </HStack>
           </MotionBox>
         </HStack>
       </VStack>

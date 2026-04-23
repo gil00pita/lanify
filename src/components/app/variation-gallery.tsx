@@ -12,6 +12,7 @@ import { generateSmartVariations } from '@/lib/variations'
 import type { GeneratedVariation } from '@/types/domain'
 import { useAppStore } from '@/store/app-store'
 import { CloseIcon } from '@/icons/Close'
+import { Palette } from '@/icons/Palette'
 
 const MotionBox = motion.create(Box)
 
@@ -171,6 +172,7 @@ export function VariationGallery() {
               placeItems="center"
               position="absolute"
               px={{ base: '6', md: '10' }}
+              height="100vh"
             >
               <Stack
                 align="center"
@@ -219,6 +221,7 @@ export function VariationGallery() {
                   size="lg"
                   w={{ base: 'full', md: '220px' }}
                 >
+                  <Palette width="18px" height="18px" />
                   Customize this card
                 </Button>
               </Stack>

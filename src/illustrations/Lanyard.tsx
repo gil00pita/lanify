@@ -23,28 +23,38 @@ export const ZoomPlusIcon: FC<Props> = ({
       width={width}
       height={height}
       className={className}
-      viewBox="0 0 150 196"
+      viewBox="0 0 150 329"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       transition="fill 0.2s ease-in-out"
       {...props}
     >
       {defs}
+
       <path
-        d="M135.905 0L149.848 23.5635L87 158.068V193.784C87 195.007 86.0505 196 84.8809 196H65.1191C63.9496 196 63 195.007 63 193.784V158.068L0 23.5635L13.5352 0H135.905ZM74.9541 132.149L126.274 20.8818H23.2402L74.9541 132.149Z"
+        d="M136.076 0.283203L150.076 24.2832L87 291.068V326.784C87 328.007 86.0505 329 84.8809 329H65.1191C63.9496 329 63 328.007 63 326.784V291.068L0.0761719 24.2832L14.0762 0.283203H136.076ZM75.0117 243.268L130.828 21.166H19.3135L75.0117 243.268Z"
         fill={paint || 'currentColor'}
       />
       <g opacity="0.2" style={{ mixBlendMode: 'multiply' }}>
-        <path d="M87 163H63V178H87V163Z" fill="#333333" />
+        <path d="M87 296H63V311H87V296Z" fill="#333333" />
       </g>
       <g opacity="0.5" style={{ mixBlendMode: 'multiply' }}>
-        <path d="M135.905 0H13.5352L23.5 20.8822H126.5L135.905 0Z" fill="#777777" />
+        <path
+          d="M136.076 0.283447H14.0759L19.3254 21.1656H130.826L136.076 0.283447Z"
+          fill="#777777"
+        />
       </g>
       <g opacity="0.5" style={{ mixBlendMode: 'multiply' }}>
-        <path d="M135.905 0L149.848 23.5635L86.9999 158.068H63L135.905 0Z" fill="#999999" />
+        <path
+          d="M136.076 0.283447L150.076 24.2834L87.0001 291.068H63.0002L136.076 0.283447Z"
+          fill="#999999"
+        />
       </g>
       <g opacity="0.5" style={{ mixBlendMode: 'multiply' }}>
-        <path d="M13.5354 0L0 23.5635L63 158.068H87L13.5354 0Z" fill="#CCCCCC" />
+        <path
+          d="M14.0759 0.283447L0.0759277 24.2834L63 291.068H87L14.0759 0.283447Z"
+          fill="#CCCCCC"
+        />
       </g>
     </Icon>
   )

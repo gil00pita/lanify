@@ -2,6 +2,7 @@ import type { CardDesign, PatternSettings, User, UserProfile } from '@/types/dom
 import { getContrastingPatternColor } from '@/lib/color-contrast'
 import { createDefaultLanyardFinish } from '@/lib/lanyard-finish'
 import { getDefaultPatternSettings } from '@/lib/pattern-presets'
+import { colors } from '@/lib/variations'
 
 const DEFAULT_PATTERN_COLOR_CANDIDATES = ['#FFFFFF', '#000000', '#333333', '#5236AB', '#991F3D']
 
@@ -60,7 +61,7 @@ export function createDraftCard(userId: string, profile: UserProfile): CardDesig
   const patternColor = getContrastingPatternColor(primaryColor, DEFAULT_PATTERN_COLOR_CANDIDATES)
 
   return {
-    cardHolderColor: '#333333',
+    cardHolderColor: colors.magenta2,
     createdAt: timestamp,
     hasBeenPrinted: false,
     id: `card_${Math.random().toString(36).slice(2, 10)}`,

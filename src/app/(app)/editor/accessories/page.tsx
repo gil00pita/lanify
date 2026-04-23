@@ -5,6 +5,7 @@ import {
   Button,
   ColorPicker,
   HStack,
+  Heading,
   Icon,
   RadioCard,
   Stack,
@@ -22,6 +23,7 @@ import { colors } from '@/lib/variations'
 import { useAppStore } from '@/store/app-store'
 import type { LanyardFinish } from '@/types/domain'
 import { BackChev } from '@/icons/BackChev'
+import { Send } from '@/icons/Send'
 
 const MotionBox = motion.create(Box)
 
@@ -129,7 +131,7 @@ export default function EditorAccessoriesPage() {
     return null
   }
 
-  const cardHolderColor = activeDraft.cardHolderColor || colors.red5
+  const cardHolderColor = activeDraft.cardHolderColor || accessorySwatches[0]
   const lanyardFinish = normalizeLanyardFinish(activeDraft.lanyardColor, activeDraft.lanyardFinish)
   const selectedGradientPresetId = getSelectedGradientPresetId(lanyardFinish)
 
@@ -150,14 +152,15 @@ export default function EditorAccessoriesPage() {
       <HStack gap="3" left="24px" position="absolute" top="24px" zIndex="docked">
         <Button
           onClick={() => router.push('/editor')}
-          rounded="full"
-          variant="outline"
-          {...frostedGlass}
+          variant="solid"
+          rounded={'full'}
+          gap={'4px'}
+          colorPalette={'primary'}
         >
           <BackChev height="14px" width="14px" />
           Back
         </Button>
-        <HStack gap={2} px="4" py="2" rounded="2xl" zIndex="docked" {...frostedGlass}>
+        <HStack gap={2} px="4" py="2" rounded="full" zIndex="docked" {...frostedGlass}>
           <Icon
             as="svg"
             boxSize="20px"
@@ -174,9 +177,7 @@ export default function EditorAccessoriesPage() {
           >
             <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
           </Icon>
-          <Text color="var(--lanyard-muted)" fontSize="sm">
-            Choose the card holder and lanyard finish.
-          </Text>
+          <Text fontSize="sm">Choose the card holder and lanyard finish.</Text>
         </HStack>
       </HStack>
 
@@ -217,9 +218,9 @@ export default function EditorAccessoriesPage() {
                 p={{ base: '5', md: '7' }}
               >
                 <Stack gap="2">
-                  <Text color="fg.muted">
-                    Finish the look with a holder and lanyard color pairing.
-                  </Text>
+                  <Heading color={'primary.950'} fontWeight={700}>
+                    Finish by customizing the card holder & lanyard.
+                  </Heading>
                 </Stack>
 
                 <Stack gap="4">
@@ -306,18 +307,18 @@ export default function EditorAccessoriesPage() {
                   }
                   value={cardHolderColor}
                 />
-
-                <HStack gap="3">
-                  <Button
-                    onClick={() => {
-                      saveDraft()
-                      router.push('/library')
-                    }}
-                  >
-                    Save lanyard design
-                  </Button>
-                </HStack>
               </Stack>
+              <HStack gap="3" mt={3} w={'full'} justifyContent="flex-end">
+                <Button
+                  onClick={() => {
+                    saveDraft()
+                    router.push('/library')
+                  }}
+                >
+                  Save & Submit for aproval
+                  <Send width="18px" height="18px" ml="2" />
+                </Button>
+              </HStack>
             </MotionBox>
           </VStack>
         </HStack>

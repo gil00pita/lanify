@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { Alert, Box, Button, Grid, HStack, Stack, Text, VStack } from '@chakra-ui/react'
+import { Alert, Box, Button, Grid, Heading, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 
 import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-modal'
@@ -149,12 +149,13 @@ export default function WizardPage() {
           borderRadius="34px"
           p={{ base: '6', md: '10' }}
         >
-          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="500" lineHeight="0.95">
-            Welcome, {profile.displayName}
-          </Text>
+          <Heading fontWeight="700" size={'2xl'}>
+            Customize your
+            <br /> office card design.
+          </Heading>
 
           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="400" mt="1">
-            {profile.role}
+            {profile.displayName}, {profile.role}
           </Text>
 
           <Alert.Root status="info" inline size={'sm'} mt="4" maxW={'250px'}>

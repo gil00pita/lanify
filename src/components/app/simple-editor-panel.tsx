@@ -6,7 +6,7 @@ import {
   Button,
   ColorPicker,
   HStack,
-  Input,
+  NumberInput,
   RadioCard,
   SimpleGrid,
   Slider,
@@ -49,12 +49,6 @@ const accentSwatches = [
   colors.red6,
   colors.red7,
   colors.commonWhite,
-  colors.gray1,
-  colors.gray2,
-  colors.gray3,
-  colors.gray4,
-  colors.gray5,
-  colors.gray6,
   colors.gray7,
 ]
 const rotationStops = [0, 90, 180, 270] as const
@@ -159,6 +153,7 @@ function SliderField(props: {
         onValueChange={(details) => onChange(details.value[0] ?? value)}
         size="sm"
         step={step}
+        colorPalette={'primary'}
         value={[value]}
       >
         <Slider.Control>
@@ -237,7 +232,6 @@ export function SimpleEditorPanel() {
         </ColorPicker.Root>
       </Box>
 
-      {/* Always visible: pattern picker */}
       <Box>
         <HStack align="flex-start" justify="space-between" mb="3">
           <Box>
@@ -333,35 +327,14 @@ export function SimpleEditorPanel() {
       />
 
       {/* Advanced accordion */}
-      <Accordion.Root collapsible variant="enclosed">
-        <Accordion.Item value="advanced">
-          <Accordion.ItemTrigger>
+      <Accordion.Root collapsible variant="plain" w={'full'}>
+        <Accordion.Item value="advanced" w={'full'}>
+          <Accordion.ItemTrigger justifyContent={'space-between'}>
             <Text fontWeight="600">Advanced</Text>
             <Accordion.ItemIndicator />
           </Accordion.ItemTrigger>
           <Accordion.ItemContent>
             <Stack gap="4" pt="3">
-              <Stack gap="4">
-                <Button
-                  onClick={() =>
-                    updateDraft((draft) => ({
-                      ...draft,
-                      patternSettings: {
-                        ...draft.patternSettings,
-                        ...getPatternDefaultsForCard(
-                          draft.patternSettings.patternId,
-                          draft.primaryColor
-                        ),
-                      },
-                    }))
-                  }
-                  size="sm"
-                  variant="outline"
-                >
-                  Reset pattern
-                </Button>
-              </Stack>
-
               <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
                 {activePattern.controls.tileSize ? (
                   <SliderField
@@ -407,6 +380,7 @@ export function SimpleEditorPanel() {
                   <Slider.Root
                     max={rotationStops.length - 1}
                     min={0}
+                    colorPalette={'primary'}
                     onValueChange={(details) =>
                       updateDraft((draft) => ({
                         ...draft,
@@ -460,27 +434,11 @@ export function SimpleEditorPanel() {
                   value={resolvedPatternSettings.opacity}
                 />
 
-                <SliderField
-                  label={`Gap: ${resolvedPatternSettings.gap}`}
-                  max={40}
-                  min={0}
-                  onChange={(value) =>
-                    updateDraft((draft) => ({
-                      ...draft,
-                      patternSettings: {
-                        ...draft.patternSettings,
-                        gap: value,
-                      },
-                    }))
-                  }
-                  value={resolvedPatternSettings.gap}
-                />
-
                 {activePattern.controls.offsetX ? (
                   <SliderField
                     label={`Horizontal offset: ${resolvedPatternSettings.offsetX}`}
-                    max={30}
-                    min={-30}
+                    max={100}
+                    min={-100}
                     onChange={(value) =>
                       updateDraft((draft) => ({
                         ...draft,
@@ -493,99 +451,90 @@ export function SimpleEditorPanel() {
                     value={resolvedPatternSettings.offsetX}
                   />
                 ) : null}
-              </SimpleGrid>
 
-              <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
                 <Box>
-                  <Text fontWeight="600" mb="2">
-                    Rows
+                  <Text fontWeight="600" mb="2" w={'full'}>
+                    Grid: {resolvedPatternSettings.rows} x {resolvedPatternSettings.cols}
                   </Text>
-                  <Input
-                    max="30"
-                    min="1"
-                    onChange={(event) =>
+                  <NumberInput.Root
+                    w={'full'}
+                    allowMouseWheel
+                    clampValueOnBlur
+                    max={30}
+                    min={1}
+                    onValueChange={(details) => {
+                      const nextValue = details.valueAsNumber
+
+                      if (!Number.isFinite(nextValue)) {
+                        return
+                      }
+
+                      const gridSize = Math.max(1, Math.min(30, Math.round(nextValue)))
+
                       updateDraft((draft) => ({
                         ...draft,
                         patternSettings: {
                           ...draft.patternSettings,
-                          rows: Number(event.target.value),
+                          cols: gridSize,
+                          rows: gridSize,
                         },
                       }))
-                    }
-                    type="number"
-                    value={resolvedPatternSettings.rows}
-                  />
+                    }}
+                    size="sm"
+                    value={String(resolvedPatternSettings.rows)}
+                  >
+                    <NumberInput.Control />
+                    <NumberInput.Input />
+                  </NumberInput.Root>
                 </Box>
 
-                <Box>
-                  <Text fontWeight="600" mb="2">
-                    Columns
-                  </Text>
-                  <Input
-                    max="30"
-                    min="1"
-                    onChange={(event) =>
-                      updateDraft((draft) => ({
-                        ...draft,
-                        patternSettings: {
-                          ...draft.patternSettings,
-                          cols: Number(event.target.value),
-                        },
-                      }))
-                    }
-                    type="number"
-                    value={resolvedPatternSettings.cols}
-                  />
-                </Box>
+                {activePattern.controls.alternateOpacity ? (
+                  <HStack justify="space-between" gridColumn="span 2 / span 2">
+                    <Text fontWeight="600">Alternate opacity pattern</Text>
+                    <Switch.Root
+                      colorPalette={'primary'}
+                      checked={resolvedPatternSettings.alternateOpacity}
+                      onCheckedChange={(details) =>
+                        updateDraft((draft) => ({
+                          ...draft,
+                          patternSettings: {
+                            ...draft.patternSettings,
+                            alternateOpacity: details.checked,
+                          },
+                        }))
+                      }
+                    >
+                      <Switch.HiddenInput />
+                      <Switch.Control />
+                    </Switch.Root>
+                  </HStack>
+                ) : null}
               </SimpleGrid>
 
-              {activePattern.controls.strokeWidth ? (
-                <SliderField
-                  label={`Stroke width: ${resolvedPatternSettings.strokeWidth}`}
-                  max={8}
-                  min={0}
-                  onChange={(value) =>
+              <Stack gap="4">
+                <Button
+                  onClick={() =>
                     updateDraft((draft) => ({
                       ...draft,
                       patternSettings: {
                         ...draft.patternSettings,
-                        strokeWidth: value,
+                        ...getPatternDefaultsForCard(
+                          draft.patternSettings.patternId,
+                          draft.primaryColor
+                        ),
                       },
                     }))
                   }
-                  step={0.25}
-                  value={resolvedPatternSettings.strokeWidth}
-                />
-              ) : null}
-
-              {activePattern.controls.alternateOpacity ? (
-                <HStack justify="space-between">
-                  <Text fontWeight="600">Alternate opacity pattern</Text>
-                  <Switch.Root
-                    checked={resolvedPatternSettings.alternateOpacity}
-                    onCheckedChange={(details) =>
-                      updateDraft((draft) => ({
-                        ...draft,
-                        patternSettings: {
-                          ...draft.patternSettings,
-                          alternateOpacity: details.checked,
-                        },
-                      }))
-                    }
-                  >
-                    <Switch.HiddenInput />
-                    <Switch.Control />
-                  </Switch.Root>
-                </HStack>
-              ) : null}
+                  size="sm"
+                  variant="outline"
+                >
+                  Reset pattern
+                </Button>
+              </Stack>
             </Stack>
           </Accordion.ItemContent>
         </Accordion.Item>
       </Accordion.Root>
-
-      <HStack gap="3">
-        <Button onClick={() => router.push('/editor/accessories')}>Choose holder & lanyard</Button>
-      </HStack>
     </Stack>
   )
 }

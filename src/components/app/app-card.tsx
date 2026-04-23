@@ -90,36 +90,44 @@ function SelectorPattern(props: { color: string; settings: PatternSettings }) {
   const cell = resolvedSettings.tileSize + resolvedSettings.gap
   const viewWidth = resolvedSettings.cols * cell
   const viewHeight = resolvedSettings.rows * cell
-  const items = Array.from(
-    { length: resolvedSettings.rows * resolvedSettings.cols },
-    (_, index) => {
-      const row = Math.floor(index / resolvedSettings.cols)
-      const col = index % resolvedSettings.cols
-      const baseX = col * cell
-      const baseY = row * cell
-      const x = baseX + (row % 2 === 1 ? resolvedSettings.offsetX : 0)
-      const y = baseY + (col % 2 === 1 ? resolvedSettings.offsetY : 0)
-      const isAlt = (row + col) % 2 === 1
-
-      let localOpacity = resolvedSettings.opacity
-      if (resolvedSettings.alternateOpacity) {
-        const mod = (row + col) % 3
-        localOpacity =
-          mod === 0
-            ? resolvedSettings.opacity
-            : mod === 1
-              ? resolvedSettings.opacity * 0.65
-              : resolvedSettings.opacity * 0.35
-      }
-
-      return { col, isAlt, key: `${row}-${col}`, localOpacity, row, x, y }
-    }
+  const overflowCols = Math.ceil(
+    (Math.abs(resolvedSettings.offsetX) + resolvedSettings.tileSize + resolvedSettings.gap) / cell
   )
+  const overflowRows = Math.ceil(
+    (Math.abs(resolvedSettings.offsetY) + resolvedSettings.tileSize + resolvedSettings.gap) / cell
+  )
+  const startRow = -overflowRows
+  const endRow = resolvedSettings.rows + overflowRows
+  const startCol = -overflowCols
+  const endCol = resolvedSettings.cols + overflowCols
+  const items = Array.from({ length: (endRow - startRow) * (endCol - startCol) }, (_, index) => {
+    const colCount = endCol - startCol
+    const row = startRow + Math.floor(index / colCount)
+    const col = startCol + (index % colCount)
+    const baseX = col * cell
+    const baseY = row * cell
+    const x = baseX + (row % 2 === 1 ? resolvedSettings.offsetX : 0)
+    const y = baseY + (col % 2 === 1 ? resolvedSettings.offsetY : 0)
+    const isAlt = (row + col) % 2 === 1
+
+    let localOpacity = resolvedSettings.opacity
+    if (resolvedSettings.alternateOpacity) {
+      const mod = (row + col) % 3
+      localOpacity =
+        mod === 0
+          ? resolvedSettings.opacity
+          : mod === 1
+            ? resolvedSettings.opacity * 0.65
+            : resolvedSettings.opacity * 0.35
+    }
+
+    return { col, isAlt, key: `${row}-${col}`, localOpacity, row, x, y }
+  })
 
   return (
     <svg
       height="100%"
-      preserveAspectRatio="xMidYMid slice"
+      preserveAspectRatio="none"
       viewBox={`0 0 ${viewWidth} ${viewHeight}`}
       width="100%"
     >
@@ -532,7 +540,7 @@ export function AppCard(props: AppCardProps) {
         <Box
           aspectRatio={PRINT_CARD_ASPECT_RATIO}
           borderRadius="24px"
-          boxShadow={cardShadow ?? '0 12px 28px rgba(17,16,13,0.16)'}
+          boxShadow={cardShadow ?? '0 30px 90px rgba(30,27,22,0.16)'}
           overflow="hidden"
           position="relative"
           w="100%"
@@ -574,7 +582,7 @@ export function AppCard(props: AppCardProps) {
       <MotionBox
         animate={{
           rotateY: isSelected ? 180 : 0,
-          scale: isSelected ? 1.08 : isCustomizing ? 1.03 : 1,
+          scale: isSelected ? 1.08 : isCustomizing ? 1.0 : 1,
           y: isSelected ? -10 : isCustomizing ? -4 : 0,
         }}
         aspectRatio={PRINT_CARD_ASPECT_RATIO}

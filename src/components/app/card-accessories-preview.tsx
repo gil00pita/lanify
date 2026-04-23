@@ -12,7 +12,7 @@ import { ZoomPlusIcon as LanyardIllustration } from '@/illustrations/Lanyard'
 
 export function CardAccessoriesPreview(props: { card: CardDesign }) {
   const { card } = props
-  const cardHolderColor = card.cardHolderColor || colors.gray6
+  const cardHolderColor = card.cardHolderColor || colors.magenta2
   const lanyardFinish = normalizeLanyardFinish(card.lanyardColor, card.lanyardFinish)
   const lanyardColor = getLanyardPreviewColor(lanyardFinish)
   const paintId = useId().replace(/:/g, '')
@@ -63,21 +63,21 @@ export function CardAccessoriesPreview(props: { card: CardDesign }) {
       mx="auto"
       position="relative"
       className="card-container"
-      filter={'drop-shadow(2px 2px 12px {colors.gray.800/50})'}
+      filter={'drop-shadow(2px 2px 12px {colors.primary.800/40})'}
     >
       <Box
         color={lanyardColor}
         left="50%"
         pointerEvents="none"
         position="absolute"
-        top="-354px"
+        top="-654px"
         transform="translateX(-50%)"
         zIndex="2"
         className="lanyard-illustration-container"
       >
         <LanyardIllustration
           defs={lanyardPaint.defs}
-          height="328px"
+          height="628px"
           paint={lanyardPaint.paint}
           width="336px"
         />

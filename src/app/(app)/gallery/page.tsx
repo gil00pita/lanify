@@ -15,15 +15,15 @@ export default function GalleryPage() {
       <HStack gap="3" position="absolute" top="24px" left="24px" zIndex={'docked'}>
         <Button
           onClick={() => router.push('/wizard')}
-          variant="outline"
+          variant="solid"
           rounded={'full'}
           gap={'4px'}
-          {...frostedGlass}
+          colorPalette={'primary'}
         >
           <BackChev width="14px" height="14px" />
           Back
         </Button>
-        <HStack py="2" px="4" gap={2} zIndex={'docked'} rounded={'2xl'} {...frostedGlass}>
+        <HStack py="2" px="4" gap={2} zIndex={'docked'} rounded={'full'} {...frostedGlass}>
           <Icon
             as="svg"
             viewBox="0 0 24 24"
@@ -44,9 +44,7 @@ export default function GalleryPage() {
             <path d="M7.2 2.2 8 5.1"></path>
             <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"></path>
           </Icon>
-          <Text fontSize="sm" color="var(--lanyard-muted)">
-            Select the variation you want to customize.
-          </Text>
+          <Text fontSize="sm">Select the variation you want to customize.</Text>
         </HStack>
       </HStack>
       <VariationGallery />
