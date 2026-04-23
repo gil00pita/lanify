@@ -1328,7 +1328,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 </Slider.Root>
                 <ColorPicker.Root
                   alignItems="flex-start"
-                  defaultValue={'#fff'}
+                  defaultValue={parseColor('#fff')}
                   onValueChange={(details) =>
                     updateEditorState((current) => ({
                       ...current,

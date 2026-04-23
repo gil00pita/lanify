@@ -7,7 +7,6 @@ import {
   HStack,
   Icon,
   RadioCard,
-  SegmentGroup,
   Stack,
   Text,
   VStack,
@@ -38,12 +37,6 @@ const accessorySwatches = Array.from(
   ])
 )
 
-const lanyardFinishOptions = [
-  { label: 'Solid color', value: 'solid' },
-  { label: 'Gradient', value: 'gradient' },
-  { label: 'Pattern', value: 'pattern' },
-] as const
-
 const lanyardGradientPresets = [
   {
     end: colors.red6,
@@ -68,53 +61,18 @@ const lanyardGradientPresets = [
   },
 ] as const
 
-const lanyardPatternPresets = [
-  {
-    accent: colors.commonWhite,
-    base: colors.purple6,
-    id: 'royal-stripe',
-    label: 'Royal stripe',
-    style: 'stripes' as const,
-  },
-  {
-    accent: colors.dataShadesYellow,
-    base: colors.gray7,
-    id: 'midnight-dot',
-    label: 'Midnight dot',
-    style: 'dots' as const,
-  },
-  {
-    accent: colors.commonWhite,
-    base: colors.red5,
-    id: 'signal-check',
-    label: 'Signal check',
-    style: 'checker' as const,
-  },
-  {
-    accent: colors.purple7,
-    base: colors.dataShadesGreen,
-    id: 'forest-stripe',
-    label: 'Forest stripe',
-    style: 'stripes' as const,
-  },
-] as const
-
-function getSelectedPatternPresetId(finish: LanyardFinish) {
-  const exactMatch = lanyardPatternPresets.find(
-    (preset) =>
-      preset.base === finish.patternBase &&
-      preset.accent === finish.patternAccent &&
-      preset.style === finish.patternStyle
-  )
-
-  return exactMatch?.id ?? lanyardPatternPresets[0].id
-}
-
 function getSelectedGradientPresetId(finish: LanyardFinish) {
   const exactMatch = lanyardGradientPresets.find(
     (preset) =>
       preset.start === finish.gradientFrom &&
       preset.end === finish.gradientTo &&
+      JSON.stringify(preset.middleStops) ===
+        JSON.stringify(
+          (finish.gradientStops ?? []).slice(1, -1).map((stop) => ({
+            color: stop.color,
+            offset: stop.offset,
+          }))
+        ) &&
       finish.gradientDirection === 'horizontal'
   )
 
@@ -136,7 +94,7 @@ function SwatchPicker(props: {
     <ColorPicker.Root
       alignItems="flex-start"
       size={'lg'}
-      defaultValue="#FFFFFF"
+      defaultValue={parseColor('#FFFFFF')}
       onValueChange={(details) => onValueChange(normalizeColorValue(details.valueAsString))}
       value={parseColor(normalizeColorValue(value))}
     >
@@ -171,10 +129,9 @@ export default function EditorAccessoriesPage() {
     return null
   }
 
-  const cardHolderColor = activeDraft.cardHolderColor || colors.gray6
+  const cardHolderColor = activeDraft.cardHolderColor || colors.red5
   const lanyardFinish = normalizeLanyardFinish(activeDraft.lanyardColor, activeDraft.lanyardFinish)
   const selectedGradientPresetId = getSelectedGradientPresetId(lanyardFinish)
-  const selectedPatternPresetId = getSelectedPatternPresetId(lanyardFinish)
 
   const updateLanyardFinish = (updater: (finish: LanyardFinish) => LanyardFinish) => {
     updateDraft((draft) => {
@@ -230,7 +187,14 @@ export default function EditorAccessoriesPage() {
           gap="8"
           justifyContent="flex-end"
         >
-          <VStack asChild w="full" height="full" p={0}>
+          <VStack
+            asChild
+            w="full"
+            height="full"
+            justifyContent="flex-end"
+            p={0}
+            className="card-preview-container"
+          >
             <MotionBox
               animate={{ opacity: 1, scale: 1, x: 0 }}
               initial={{ opacity: 0, scale: 0.92, x: -48 }}
@@ -258,308 +222,79 @@ export default function EditorAccessoriesPage() {
                   </Text>
                 </Stack>
 
-                <Box>
-                  <Text fontSize="sm" fontWeight="600" mb="2">
-                    Lanyard color
-                  </Text>
-                  <SegmentGroup.Root
-                    onValueChange={(details) =>
+                <Stack gap="4">
+                  <RadioCard.Root
+                    colorPalette="primary"
+                    align="center"
+                    onValueChange={(details) => {
+                      const preset = lanyardGradientPresets.find(
+                        (entry) => entry.id === details.value
+                      )
+
+                      if (!preset) {
+                        return
+                      }
+
                       updateLanyardFinish((finish) => ({
                         ...finish,
-                        mode: (details.value as LanyardFinish['mode']) || 'solid',
+                        gradientDirection: 'horizontal',
+                        gradientFrom: preset.start,
+                        gradientStops: [
+                          { color: preset.start, offset: '0%' },
+                          ...preset.middleStops,
+                          { color: preset.end, offset: '100%' },
+                        ],
+                        gradientTo: preset.end,
                       }))
-                    }
-                    size="sm"
-                    value={lanyardFinish.mode}
+                    }}
+                    orientation="vertical"
+                    value={selectedGradientPresetId}
+                    variant="outline"
                   >
-                    <SegmentGroup.Indicator bg="bg" />
-                    {lanyardFinishOptions.map((option) => (
-                      <SegmentGroup.Item key={option.value} value={option.value}>
-                        <SegmentGroup.ItemText px="3" py="1.5">
-                          {option.label}
-                        </SegmentGroup.ItemText>
-                        <SegmentGroup.ItemHiddenInput />
-                      </SegmentGroup.Item>
-                    ))}
-                  </SegmentGroup.Root>
-                </Box>
+                    <RadioCard.Label fontSize="sm" fontWeight="600">
+                      Lanyard color
+                    </RadioCard.Label>
+                    <Stack gap="3">
+                      {lanyardGradientPresets.map((preset) => (
+                        <RadioCard.Item key={preset.id} value={preset.id} width="full">
+                          <RadioCard.ItemHiddenInput />
+                          <RadioCard.ItemControl
+                            alignItems="center"
+                            display="flex"
+                            gap="4"
+                            justifyContent="space-between"
+                            minH="88px"
+                            px="4"
+                            py="3"
+                          >
+                            <HStack flex="1" gap="4" width="full">
+                              <RadioCard.ItemIndicator />
+                              <RadioCard.ItemContent flex="1" width="full">
+                                <Box
+                                  borderRadius="md"
+                                  h="44px"
+                                  overflow="hidden"
+                                  position="relative"
+                                  w="full"
+                                  bgGradient={(() => {
+                                    const stops = [
+                                      ...preset.middleStops.map(
+                                        (stop) => `${stop.color} ${stop.offset}`
+                                      ),
+                                      `${preset.end} 100%`,
+                                    ]
 
-                {lanyardFinish.mode === 'solid' ? (
-                  <SwatchPicker
-                    label="Solid tone"
-                    onValueChange={(value) =>
-                      updateLanyardFinish((finish) => ({
-                        ...finish,
-                        solidColor: value,
-                      }))
-                    }
-                    value={lanyardFinish.solidColor}
-                  />
-                ) : null}
-
-                {lanyardFinish.mode === 'gradient' ? (
-                  <Stack gap="4">
-                    <RadioCard.Root
-                      colorPalette={'primary'}
-                      align="center"
-                      onValueChange={(details) => {
-                        const preset = lanyardGradientPresets.find(
-                          (entry) => entry.id === details.value
-                        )
-
-                        if (!preset) {
-                          return
-                        }
-
-                        updateLanyardFinish((finish) => ({
-                          ...finish,
-                          gradientDirection: 'horizontal',
-                          gradientFrom: preset.start,
-                          gradientTo: preset.end,
-                        }))
-                      }}
-                      orientation="vertical"
-                      value={selectedGradientPresetId}
-                      variant="outline"
-                    >
-                      <RadioCard.Label fontSize="sm" fontWeight="600">
-                        Gradient preset
-                      </RadioCard.Label>
-                      <Stack gap="3">
-                        {lanyardGradientPresets.map((preset) => (
-                          <RadioCard.Item key={preset.id} value={preset.id} width="full">
-                            <RadioCard.ItemHiddenInput />
-                            <RadioCard.ItemControl
-                              alignItems="center"
-                              display="flex"
-                              gap="4"
-                              justifyContent="space-between"
-                              minH="88px"
-                              px="4"
-                              py="3"
-                            >
-                              <HStack flex="1" gap="4" width={'full'}>
-                                <RadioCard.ItemIndicator />
-                                <RadioCard.ItemContent flex="1" width={'full'}>
-                                  <Box
-                                    borderRadius="md"
-                                    h="44px"
-                                    overflow="hidden"
-                                    position="relative"
-                                    w="full"
-                                    bgGradient={(() => {
-                                      const stops = [
-                                        ...preset.middleStops.map(
-                                          (stop) => `${stop.color} ${stop.offset}`
-                                        ),
-                                        `${preset.end} 100%`,
-                                      ]
-
-                                      return `linear-gradient(to right, ${stops.join(', ')})`
-                                    })()}
-                                  ></Box>
-                                </RadioCard.ItemContent>
-                              </HStack>
-                            </RadioCard.ItemControl>
-                          </RadioCard.Item>
-                        ))}
-                      </Stack>
-                    </RadioCard.Root>
-                  </Stack>
-                ) : null}
-
-                {lanyardFinish.mode === 'pattern' ? (
-                  <Stack gap="4">
-                    <RadioCard.Root
-                      align="center"
-                      onValueChange={(details) => {
-                        const preset = lanyardPatternPresets.find(
-                          (entry) => entry.id === details.value
-                        )
-
-                        if (!preset) {
-                          return
-                        }
-
-                        updateLanyardFinish((finish) => ({
-                          ...finish,
-                          patternAccent: preset.accent,
-                          patternBase: preset.base,
-                          patternStyle: preset.style,
-                        }))
-                      }}
-                      orientation="vertical"
-                      value={selectedPatternPresetId}
-                      variant="outline"
-                    >
-                      <RadioCard.Label fontSize="sm" fontWeight="600">
-                        Pattern preset
-                      </RadioCard.Label>
-                      <Stack gap="3">
-                        {lanyardPatternPresets.map((preset) => (
-                          <RadioCard.Item key={preset.id} value={preset.id} width="full">
-                            <RadioCard.ItemHiddenInput />
-                            <RadioCard.ItemControl
-                              alignItems="center"
-                              display="flex"
-                              gap="4"
-                              justifyContent="space-between"
-                              minH="88px"
-                              px="4"
-                              py="3"
-                            >
-                              <HStack flex="1" gap="4">
-                                <RadioCard.ItemIndicator />
-                                <RadioCard.ItemContent flex="1">
-                                  <Box
-                                    borderRadius="md"
-                                    h="44px"
-                                    overflow="hidden"
-                                    position="relative"
-                                    w="full"
-                                  >
-                                    <Box bg={preset.base} h="full" inset="0" position="absolute" />
-                                    {preset.style === 'stripes' ? (
-                                      <>
-                                        <Box
-                                          bg={preset.accent}
-                                          h="140%"
-                                          left="16%"
-                                          position="absolute"
-                                          top="-20%"
-                                          transform="rotate(32deg)"
-                                          w="10px"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="140%"
-                                          left="52%"
-                                          position="absolute"
-                                          top="-20%"
-                                          transform="rotate(32deg)"
-                                          w="10px"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="140%"
-                                          left="78%"
-                                          position="absolute"
-                                          top="-20%"
-                                          transform="rotate(32deg)"
-                                          w="10px"
-                                        />
-                                      </>
-                                    ) : null}
-                                    {preset.style === 'dots' ? (
-                                      <>
-                                        {['10%', '26%', '42%', '58%', '74%', '90%'].map((left) => (
-                                          <Box
-                                            key={`${preset.id}-${left}`}
-                                            bg={preset.accent}
-                                            borderRadius="full"
-                                            boxSize="7px"
-                                            left={left}
-                                            position="absolute"
-                                            top="50%"
-                                            transform="translate(-50%, -50%)"
-                                          />
-                                        ))}
-                                      </>
-                                    ) : null}
-                                    {preset.style === 'checker' ? (
-                                      <>
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="0"
-                                          position="absolute"
-                                          top="0"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="24%"
-                                          position="absolute"
-                                          top="0"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="48%"
-                                          position="absolute"
-                                          top="0"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="72%"
-                                          position="absolute"
-                                          top="0"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="12%"
-                                          position="absolute"
-                                          top="50%"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="36%"
-                                          position="absolute"
-                                          top="50%"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="60%"
-                                          position="absolute"
-                                          top="50%"
-                                          w="12%"
-                                        />
-                                        <Box
-                                          bg={preset.accent}
-                                          h="50%"
-                                          left="84%"
-                                          position="absolute"
-                                          top="50%"
-                                          w="12%"
-                                        />
-                                      </>
-                                    ) : null}
-                                    <Text
-                                      color={preset.accent}
-                                      fontSize="xs"
-                                      fontStyle="italic"
-                                      fontWeight="700"
-                                      left="50%"
-                                      letterSpacing="0.08em"
-                                      position="absolute"
-                                      textTransform="uppercase"
-                                      top="50%"
-                                      transform="translate(-50%, -50%)"
-                                      whiteSpace="nowrap"
-                                    >
-                                      Lorem Ipsum
-                                    </Text>
-                                  </Box>
-                                  <RadioCard.ItemText mt="2">{preset.label}</RadioCard.ItemText>
-                                </RadioCard.ItemContent>
-                              </HStack>
-                            </RadioCard.ItemControl>
-                          </RadioCard.Item>
-                        ))}
-                      </Stack>
-                    </RadioCard.Root>
-                  </Stack>
-                ) : null}
+                                    return `linear-gradient(to right, ${stops.join(', ')})`
+                                  })()}
+                                />
+                              </RadioCard.ItemContent>
+                            </HStack>
+                          </RadioCard.ItemControl>
+                        </RadioCard.Item>
+                      ))}
+                    </Stack>
+                  </RadioCard.Root>
+                </Stack>
 
                 <SwatchPicker
                   label="Card holder color"

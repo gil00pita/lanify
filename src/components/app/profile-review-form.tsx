@@ -17,7 +17,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import { Avatar } from '@/icons/Avatar'
+import { Avatar } from '@/illustrations/Avatar'
 import { Camera } from '@/icons/Camera'
 import { CloseIcon } from '@/icons/Close'
 import { FaceGuide } from '@/icons/FaceGuide'
@@ -28,6 +28,8 @@ import { EditIcon } from '@/icons/Edit'
 import { DeleteIcon } from '@/icons/Delete'
 
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
+const MAX_EDITOR_SOURCE_SIZE = 1600
+const EDITOR_SOURCE_QUALITY = 0.88
 const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
 const SUPPORTED_IMAGE_ACCEPT = '.jpg,.jpeg,.png,.webp'
@@ -40,6 +42,79 @@ function isCompatibleImageFile(file: File) {
   const hasSupportedType = file.type ? SUPPORTED_IMAGE_TYPES.has(file.type) : hasSupportedExtension
 
   return hasSupportedExtension && hasSupportedType
+}
+
+function loadImageFromUrl(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('Could not load the selected image.'))
+    image.src = src
+  })
+}
+
+function canvasToDataUrl(canvas: HTMLCanvasElement, type = 'image/jpeg', quality = 0.88) {
+  return new Promise<string>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Could not prepare the selected image.'))
+          return
+        }
+
+        const reader = new FileReader()
+        reader.onerror = () => reject(new Error('Could not read the selected image.'))
+        reader.onloadend = () => {
+          const result = typeof reader.result === 'string' ? reader.result : null
+
+          if (!result) {
+            reject(new Error('Could not read the selected image.'))
+            return
+          }
+
+          resolve(result)
+        }
+        reader.readAsDataURL(blob)
+      },
+      type,
+      quality
+    )
+  })
+}
+
+async function prepareImageForEditor(file: File) {
+  const objectUrl = URL.createObjectURL(file)
+
+  try {
+    const image = await loadImageFromUrl(objectUrl)
+    const sourceWidth = image.naturalWidth || image.width
+    const sourceHeight = image.naturalHeight || image.height
+
+    if (!sourceWidth || !sourceHeight) {
+      throw new Error('Could not read the selected image dimensions.')
+    }
+
+    const scale = Math.min(1, MAX_EDITOR_SOURCE_SIZE / Math.max(sourceWidth, sourceHeight))
+    const width = Math.max(1, Math.round(sourceWidth * scale))
+    const height = Math.max(1, Math.round(sourceHeight * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      throw new Error('Canvas is unavailable.')
+    }
+
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
+    context.drawImage(image, 0, 0, width, height)
+
+    return canvasToDataUrl(canvas, 'image/jpeg', EDITOR_SOURCE_QUALITY)
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
 }
 
 type ProfileReviewFormProps = {
@@ -148,7 +223,7 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
     })
   }
 
-  function handleUpload(event: ChangeEvent<HTMLInputElement>) {
+  async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -168,18 +243,16 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
     }
 
     setUploadError(null)
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : null
-
-      if (!result) {
-        return
-      }
-
-      applySelectedImage(result)
+    try {
+      const imageSrc = await prepareImageForEditor(file)
+      applySelectedImage(imageSrc)
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Could not prepare the selected image.'
+      setUploadError(message)
+    } finally {
       event.target.value = ''
     }
-    reader.readAsDataURL(file)
   }
 
   function openCamera() {
@@ -299,7 +372,12 @@ export function ProfileReviewForm(props: ProfileReviewFormProps) {
             ) : null}
             {hasProfilePicture ? (
               <>
-                <Button rounded="full" w="full" onClick={onRequestOpenEditor} variant="surface">
+                <Button
+                  rounded="full"
+                  w="full"
+                  onClick={() => onRequestOpenEditor()}
+                  variant="surface"
+                >
                   <EditIcon />
                   Edit Current Picture
                 </Button>

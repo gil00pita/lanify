@@ -183,10 +183,10 @@ export function VariationGallery() {
                   aria-label="Close selected card"
                   onClick={handleCloseFocused}
                   position="absolute"
-                  right={{ base: '-22px' }}
+                  right={{ base: '-12px' }}
                   rounded="full"
                   size="sm"
-                  top={{ base: '-36px' }}
+                  top={{ base: '-12px' }}
                   variant="solid"
                   colorPalette={'gray'}
                   zIndex={1}

@@ -47,7 +47,8 @@ export interface PatternSettings {
   motifScale: number
   offsetX: number
   offsetY: number
-  patternId: 'pattern-01' | 'pattern-11'
+  opacity: number
+  patternId: 'pattern-01' | 'pattern-02'
   phaseOffset: number
   rotation: number
   rowSpacing: number
@@ -76,21 +77,18 @@ export interface Signature {
   strokes: SignatureStroke[]
 }
 
-export type LanyardFinishMode = 'solid' | 'gradient' | 'pattern'
-
 export type LanyardGradientDirection = 'vertical' | 'horizontal' | 'diagonal'
 
-export type LanyardPatternStyle = 'stripes' | 'dots' | 'checker'
+export interface LanyardGradientStop {
+  color: string
+  offset: string
+}
 
 export interface LanyardFinish {
   gradientDirection: LanyardGradientDirection
   gradientFrom: string
+  gradientStops?: LanyardGradientStop[]
   gradientTo: string
-  mode: LanyardFinishMode
-  patternAccent: string
-  patternBase: string
-  patternStyle: LanyardPatternStyle
-  solidColor: string
 }
 
 export interface CardDesign {

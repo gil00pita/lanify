@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 
 import type { PatternSettings } from '@/types/domain'
+import { Pattern02 } from '@/illustrations/Pattern-02'
+import { Pattern01 } from '@/illustrations/Pattern-01'
 
-export type PatternPresetId = 'pattern-01' | 'pattern-11'
+export type PatternPresetId = 'pattern-01' | 'pattern-02'
 
 type PatternPreset = {
   controls: {
@@ -55,7 +57,8 @@ type PatternPreset = {
 export const PATTERN_PRESETS: PatternPreset[] = [
   {
     id: 'pattern-01',
-    name: 'Pattern 01',
+    name: 'Pattern 1',
+    image: <Pattern01 />,
     defaults: {
       tileSize: 42,
       motifScale: 1,
@@ -105,8 +108,9 @@ export const PATTERN_PRESETS: PatternPreset[] = [
     ),
   },
   {
-    id: 'pattern-11',
-    name: 'Pattern 11',
+    id: 'pattern-02',
+    name: 'Pattern 2',
+    image: <Pattern02 />,
     defaults: {
       tileSize: 109,
       motifScale: 1,

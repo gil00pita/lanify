@@ -2,18 +2,16 @@
   "servers": {
     "chakra-ui": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@chakra-ui/react-mcp"
-      ],
+      "args": ["-y", "@chakra-ui/react-mcp"],
       "type": "stdio"
+    },
+    "browsermcp": {
+      "command": "npx",
+      "args": ["@browsermcp/mcp@latest"]
     },
     "chrome-devtools": {
       "command": "npx",
-      "args": [
-        "-y",
-        "chrome-devtools-mcp@latest"
-      ],
+      "args": ["-y", "chrome-devtools-mcp@latest"],
       "type": "stdio"
     },
     "next-devtools": {
@@ -23,10 +21,8 @@
     "ESLint": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "@eslint/mcp@latest"
-      ]
-    },
+      "args": ["@eslint/mcp@latest"]
+    }
   },
   "inputs": []
 }

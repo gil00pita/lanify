@@ -21,10 +21,7 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(circle at top left, rgba(211, 167, 64, 0.22), transparent 30%),
-    radial-gradient(circle at top right, rgba(38, 92, 75, 0.12), transparent 26%),
-    linear-gradient(180deg, #f9f4ea 0%, #efe7d8 100%);
+  background: linear-gradient(180deg, #cbc3e6 0%, #e6e3f3 100%);
   color: var(--lanyard-text);
   font-family: 'Inter', 'Segoe UI', sans-serif;
 }

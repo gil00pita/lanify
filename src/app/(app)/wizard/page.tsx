@@ -147,9 +147,7 @@ export default function WizardPage() {
           {...frostedGlass}
           border="1px solid rgba(255,255,255,0.82)"
           borderRadius="34px"
-          // maxW="980px"
           p={{ base: '6', md: '10' }}
-          // w="full"
         >
           <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="500" lineHeight="0.95">
             Welcome, {profile.displayName}

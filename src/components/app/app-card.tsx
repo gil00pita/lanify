@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Box, Image, Stack, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 
-import { Avatar } from '@/icons/Avatar'
+import { Avatar } from '@/illustrations/Avatar'
 import { PATTERN_PRESET_MAP } from '@/lib/pattern-presets'
 import { PRINT_CARD_ASPECT_RATIO } from '@/lib/ui-tokens'
 import type { CardDesign, PatternSettings } from '@/types/domain'
@@ -13,7 +13,7 @@ import type { CardDesign, PatternSettings } from '@/types/domain'
 const MotionBox = motion.create(Box)
 const CARD_LAYOUT = {
   default: {
-    infoPanelTop: '56%',
+    infoPanelTop: '58%',
     maxNameFontSize: 42,
     maxNameWidth: 154,
     maxRoleFontSize: 18,
@@ -34,10 +34,13 @@ type AppCardState = 'default' | 'selected' | 'customizing'
 
 type AppCardProps = {
   card: CardDesign
+  cardInsetShadow?: string
+  cardShadow?: string
   firstName?: string
   interactive?: boolean
   lastName?: string
   onClick?: () => void
+  showShine?: boolean
   skipAutoFit?: boolean
   staticPreview?: boolean
   state?: AppCardState
@@ -123,8 +126,8 @@ function SelectorPattern(props: { color: string; settings: PatternSettings }) {
       {items.map(({ col, isAlt, key, localOpacity, row, x, y }) => {
         const extraRotation = resolvedSettings.checkerFlip && isAlt ? 180 : 0
         const skew = `skewX(${resolvedSettings.skewX}) skewY(${resolvedSettings.skewY})`
-        const translateX = pattern.id === 'pattern-11' ? -54.5 : -resolvedSettings.tileSize / 2
-        const translateY = pattern.id === 'pattern-11' ? -73 : -resolvedSettings.tileSize / 2
+        const translateX = pattern.id === 'pattern-02' ? -54.5 : -resolvedSettings.tileSize / 2
+        const translateY = pattern.id === 'pattern-02' ? -73 : -resolvedSettings.tileSize / 2
 
         return (
           <g
@@ -147,6 +150,7 @@ function AppCardFront(props: {
   firstName?: string
   foreground: string
   lastName?: string
+  showShine?: boolean
   skipAutoFit?: boolean
 }) {
   const {
@@ -156,6 +160,7 @@ function AppCardFront(props: {
     firstName,
     foreground,
     lastName,
+    showShine = false,
     skipAutoFit = false,
   } = props
   const layout = compactLayout ? CARD_LAYOUT.gallery : CARD_LAYOUT.default
@@ -167,9 +172,9 @@ function AppCardFront(props: {
   const firstLineRef = useRef<HTMLParagraphElement | null>(null)
   const secondLineRef = useRef<HTMLParagraphElement | null>(null)
   const roleRef = useRef<HTMLParagraphElement | null>(null)
-  const [nameFontSize, setNameFontSize] = useState(layout.maxNameFontSize)
-  const [surnameFontSize, setSurnameFontSize] = useState(layout.maxNameFontSize)
-  const [roleFontSize, setRoleFontSize] = useState(layout.maxRoleFontSize)
+  const [nameFontSize, setNameFontSize] = useState<number>(layout.maxNameFontSize)
+  const [surnameFontSize, setSurnameFontSize] = useState<number>(layout.maxNameFontSize)
+  const [roleFontSize, setRoleFontSize] = useState<number>(layout.maxRoleFontSize)
   const shouldEllipsizeName = nameFontSize <= layout.minNameFontSize + 0.5
   const shouldEllipsizeSurname = surnameFontSize <= layout.minNameFontSize + 0.5
   const shouldEllipsizeRole = roleFontSize <= layout.minRoleFontSize + 0.5
@@ -300,10 +305,46 @@ function AppCardFront(props: {
   return (
     <Box h="full" overflow="hidden" position="relative">
       <Box inset="0" position="absolute" />
-
+      {showShine ? (
+        <Box
+          aria-hidden="true"
+          borderRadius="24px"
+          className="card-shine"
+          inset="0"
+          overflow="hidden"
+          pointerEvents="none"
+          position="absolute"
+          zIndex="4"
+        >
+          <Box
+            bg="linear-gradient(112deg, transparent 0%, transparent 26%, rgba(255,255,255,0.18) 36%, rgba(255,255,255,0.78) 45%, rgba(255,255,255,0.22) 55%, transparent 70%, transparent 100%)"
+            filter="blur(20px)"
+            h="150%"
+            left="24%"
+            mixBlendMode="screen"
+            opacity="0.9"
+            position="absolute"
+            top="-25%"
+            transform="rotate(8deg)"
+            w="72%"
+          />
+          <Box
+            bg="linear-gradient(112deg, transparent 10%, rgba(255,255,255,0.32) 48%, transparent 82%)"
+            h="120%"
+            left="10%"
+            mixBlendMode="screen"
+            opacity="0.38"
+            filter="blur(10px)"
+            position="absolute"
+            top="-10%"
+            transform="rotate(8deg)"
+            w="32%"
+          />
+        </Box>
+      ) : null}
       <Box
         className="card-portrait"
-        h="64%"
+        h="65%"
         insetX="0"
         overflow="hidden"
         position="absolute"
@@ -346,10 +387,10 @@ function AppCardFront(props: {
         bgColor="rgba(250,249,246,1)"
         bottom="-1px"
         clipPath="polygon(0 0, 72% 0, 84% 16%, 100% 16%, 100% 100%, 0 100%)"
-        color="fb"
+        color="fg"
         left="0"
         position="absolute"
-        pt={3}
+        pt={5}
         px={6}
         pb={7}
         right="0"
@@ -421,9 +462,10 @@ function AppCardFace(props: {
   children: ReactNode
   color: string
   foreground: string
+  insetShadow?: string
   rotateY?: number
 }) {
-  const { children, foreground, rotateY = 0 } = props
+  const { children, foreground, insetShadow, rotateY = 0 } = props
 
   return (
     <Box
@@ -443,6 +485,17 @@ function AppCardFace(props: {
       }}
     >
       {children}
+      {insetShadow ? (
+        <Box
+          aria-hidden="true"
+          borderRadius="inherit"
+          boxShadow={insetShadow}
+          inset="0"
+          pointerEvents="none"
+          position="absolute"
+          zIndex="5"
+        />
+      ) : null}
     </Box>
   )
 }
@@ -450,10 +503,13 @@ function AppCardFace(props: {
 export function AppCard(props: AppCardProps) {
   const {
     card,
+    cardInsetShadow,
+    cardShadow,
     firstName,
     interactive,
     lastName,
     onClick,
+    showShine = false,
     skipAutoFit = false,
     state = 'default',
     staticPreview = false,
@@ -476,7 +532,7 @@ export function AppCard(props: AppCardProps) {
         <Box
           aspectRatio={PRINT_CARD_ASPECT_RATIO}
           borderRadius="24px"
-          boxShadow="0 12px 28px rgba(17,16,13,0.16)"
+          boxShadow={cardShadow ?? '0 12px 28px rgba(17,16,13,0.16)'}
           overflow="hidden"
           position="relative"
           w="100%"
@@ -488,9 +544,20 @@ export function AppCard(props: AppCardProps) {
             firstName={firstName}
             foreground={foreground}
             lastName={lastName}
+            showShine={showShine}
             skipAutoFit={skipAutoFit}
-            {...props}
           />
+          {cardInsetShadow ? (
+            <Box
+              aria-hidden="true"
+              borderRadius="inherit"
+              boxShadow={cardInsetShadow}
+              inset="0"
+              pointerEvents="none"
+              position="absolute"
+              zIndex="5"
+            />
+          ) : null}
         </Box>
       </Box>
     )
@@ -518,12 +585,14 @@ export function AppCard(props: AppCardProps) {
         // }
         borderRadius="24px"
         boxShadow={
-          isSelected
+          cardShadow ??
+          (isSelected
             ? '0 30px 80px rgba(17,16,13,0.32)'
             : isCustomizing
               ? '0 24px 60px rgba(17,16,13,0.24)'
-              : '0 12px 28px rgba(17,16,13,0.16)'
+              : '0 12px 28px rgba(17,16,13,0.16)')
         }
+        border="1px solid #0000003b"
         position="relative"
         style={{ transformStyle: 'preserve-3d' }}
         transition={{
@@ -534,17 +603,23 @@ export function AppCard(props: AppCardProps) {
         whileTap={isInteractive ? { scale: 0.99 } : undefined}
         w="100%"
       >
-        <AppCardFace color={color} foreground={foreground}>
+        <AppCardFace color={color} foreground={foreground} insetShadow={cardInsetShadow}>
           <AppCardFront
             card={card}
             color={color}
             firstName={firstName}
             foreground={foreground}
             lastName={lastName}
+            showShine={showShine}
             skipAutoFit={skipAutoFit}
           />
         </AppCardFace>
-        <AppCardFace color={color} foreground={foreground} rotateY={180}>
+        <AppCardFace
+          color={color}
+          foreground={foreground}
+          insetShadow={cardInsetShadow}
+          rotateY={180}
+        >
           <AppCardBack card={card} color={color} foreground={foreground} />
         </AppCardFace>
       </MotionBox>

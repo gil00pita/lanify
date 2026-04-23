@@ -26,6 +26,7 @@ export const ZoomPlusIcon: FC<Props> = ({
       viewBox="0 0 150 196"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      transition="fill 0.2s ease-in-out"
       {...props}
     >
       {defs}
