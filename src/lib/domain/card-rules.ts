@@ -23,7 +23,3 @@ export function getCardStatusLabel(card: CardDesign) {
 export function getNextPrintPrice(printRequests: PrintRequest[]) {
   return printRequests.length === 0 ? 0 : 50
 }
-
-export function isFirstTimeUser(cards: CardDesign[]) {
-  return cards.length === 0
-}

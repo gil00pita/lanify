@@ -2,6 +2,12 @@
 
 Minimal Next.js App Router starter wired up with Chakra UI.
 
+## Demo
+
+<video src="public/Demo.mp4" controls width="100%"></video>
+
+[View demo video](public/Demo.mp4)
+
 ## Requirements
 
 - Node.js 20.9.0 or newer

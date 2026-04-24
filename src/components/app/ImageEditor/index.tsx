@@ -1,15 +1,7 @@
 'use client'
 
 import { Box, IconButton, type BoxProps } from '@chakra-ui/react'
-import {
-  type ChangeEvent,
-  type ComponentProps,
-  type ReactNode,
-  type RefObject,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { type ComponentProps, type ReactNode, type RefObject } from 'react'
 
 import { CropperPreview, type CropperPreviewRef } from 'react-advanced-cropper'
 import { Cropper, type CropperRef } from 'react-mobile-cropper'
@@ -23,8 +15,6 @@ import { AdjustableCropperBackground } from './AdjustableCropperBackground'
 import { AdjustablePreviewBackground } from './AdjustablePreviewBackground'
 import { Slider } from './Slider'
 import { DownloadIcon } from '@/icons/DownloadIcon'
-
-export type ImageEditorMode = 'background' | 'color' | 'crop'
 
 export type ImageEditorAdjustments = {
   brightness: number
@@ -227,67 +217,5 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
       ) : null}
       {children}
     </Box>
-  )
-}
-
-export function ImageEditor() {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const cropperRef = useRef<CropperRef>(null)
-
-  const [image, setImage] = useState<string>('')
-
-  const onUpload = () => {
-    inputRef.current?.click()
-  }
-
-  const onCrop = () => {
-    const cropper = cropperRef.current
-    if (cropper) {
-      const canvas = cropper.getCanvas()
-      const newTab = window.open()
-      if (newTab && canvas) {
-        newTab.document.body.innerHTML = `<img src="${canvas.toDataURL()}"></img>`
-      }
-    }
-  }
-
-  const onLoadImage = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files && event.target.files[0]
-    if (file) {
-      setImage(URL.createObjectURL(file))
-    }
-    event.target.value = ''
-  }
-
-  useEffect(() => {
-    return () => {
-      if (image) {
-        URL.revokeObjectURL(image)
-      }
-    }
-  }, [image])
-
-  return (
-    <div className="example">
-      <div className="example__cropper-wrapper">
-        <Cropper
-          ref={cropperRef}
-          className="example__cropper"
-          backgroundClassName="example__cropper-background"
-          src={image}
-        />
-      </div>
-      <div className="example__buttons-wrapper">
-        <button className="example__button" onClick={onUpload}>
-          <input ref={inputRef} type="file" accept="image/*" onChange={onLoadImage} />
-          Upload image
-        </button>
-        {image && (
-          <button className="example__button" onClick={onCrop}>
-            Download result
-          </button>
-        )}
-      </div>
-    </div>
   )
 }

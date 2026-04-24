@@ -1,39 +1,5 @@
 import { createSystem, defaultConfig, defineConfig, defineRecipe } from '@chakra-ui/react'
 
-export const CGIcolors = {
-  brandPurple: '#5236AB',
-  brandRed: '#E31937',
-  commonBlack: '#000000',
-  commonWhite: '#FFFFFF',
-  dataShadesGreen: '#128354',
-  dataShadesRed: '#B00020',
-  dataShadesYellow: '#F1A425',
-  gray1: '#EEEEEE',
-  gray2: '#CCCCCC',
-  gray3: '#999999',
-  gray4: '#777777',
-  gray5: '#555555',
-  gray6: '#333333',
-  gray7: '#000000',
-  magenta1: '#CB7CA3',
-  magenta2: '#A82465',
-  magenta3: '#7E1B4C',
-  purple1: '#E6E3F3',
-  purple2: '#CBC3E6',
-  purple3: '#BFB5F9',
-  purple4: '#9E83F5',
-  purple5: '#6E3FED',
-  purple6: '#5236AB',
-  purple7: '#200A58',
-  red1: '#FFCDD2',
-  red2: '#FF978A',
-  red3: '#FF7362',
-  red4: '#FF6A00',
-  red5: '#E31937',
-  red6: '#991F3D',
-  red7: '#650A21',
-}
-
 const colors = {
   primary: {
     50: { value: '#e3ddf7' },
@@ -81,7 +47,7 @@ const buttonRecipe = defineRecipe({
   },
 })
 
-export const theme = {
+const theme = {
   preflight: true,
   cssVarsPrefix: 'lanify', // changes --chakra-* to --lanify-*
   globalCss: {

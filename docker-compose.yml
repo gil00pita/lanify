@@ -4,9 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: yarn build && yarn start --hostname 0.0.0.0 --port 3000
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       ALLOWED_DEV_ORIGINS: ${ALLOWED_DEV_ORIGINS:-}
       REMBG_SERVICE_URL: http://rembg:7000
     healthcheck:
@@ -15,17 +14,12 @@ services:
       retries: 10
       start_period: 45s
       test:
-        - CMD
-        - wget
-        - '-q'
-        - '--spider'
-        - 'http://127.0.0.1:3000/'
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:3000/').then((response) =>
+          process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
     ports:
       - '3000:3000'
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       rembg:
         condition: service_healthy

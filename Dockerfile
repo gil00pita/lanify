@@ -28,6 +28,7 @@ COPY package.json yarn.lock ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
+COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 

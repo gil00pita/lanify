@@ -11,7 +11,7 @@ export const SEEDED_USER: User = {
   id: 'user_seeded_lanyard',
 }
 
-export const DEFAULT_PATTERN_SETTINGS: PatternSettings = {
+const DEFAULT_PATTERN_SETTINGS: PatternSettings = {
   amplitude: 0.9,
   alternateOpacity: true,
   animate: false,
