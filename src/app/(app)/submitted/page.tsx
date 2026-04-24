@@ -77,7 +77,7 @@ export default function SubmittedAccessoriesPage() {
             </MotionBox>
           </VStack>
 
-          <VStack asChild height="full" p={0} w="full" custifyContent="center">
+          <VStack asChild height="full" p={0} w="full" justifyContent="center">
             <MotionBox
               animate={{ opacity: 1, x: 0 }}
               initial={{ opacity: 0, x: 44 }}

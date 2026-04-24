@@ -15,7 +15,6 @@ import {
   Text,
   parseColor,
 } from '@chakra-ui/react'
-import { useRouter } from 'next/navigation'
 
 import {
   VISIBLE_PATTERN_CONTRAST_RATIO,
@@ -169,7 +168,6 @@ function SliderField(props: {
 
 export function SimpleEditorPanel() {
   const activeDraft = useAppStore((state) => state.activeDraft)
-  const router = useRouter()
   const updateDraft = useAppStore((state) => state.updateDraft)
 
   if (!activeDraft) {

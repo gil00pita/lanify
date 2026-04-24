@@ -3270,6 +3270,13 @@ advanced-cropper@~0.17.1:
   dependencies:
     tslib "^2.4.0"
 
+advanced-cropper@~0.18.0:
+  version "0.18.0"
+  resolved "https://registry.yarnpkg.com/advanced-cropper/-/advanced-cropper-0.18.0.tgz#dc09a572ac719ee6f149a73ffd4ef094b7b7e1a1"
+  integrity sha512-Bo0fiW8F+kI4f8zEm8YXIDkGNi+aXaQPxqDijU7hY+1ETACbvFnNCxssspgAwHBy9RpFlcXMmjcq+LImUOhaqQ==
+  dependencies:
+    tslib "^2.4.0"
+
 ajv@^6.12.4, ajv@^6.14.0:
   version "6.14.0"
   resolved "https://registry.npmjs.org/ajv/-/ajv-6.14.0.tgz"
@@ -5987,6 +5994,15 @@ react-advanced-cropper@^0.20.1:
     classnames "^2.2.6"
     tslib "^2.4.0"
 
+react-advanced-cropper@~0.19.3:
+  version "0.19.6"
+  resolved "https://registry.yarnpkg.com/react-advanced-cropper/-/react-advanced-cropper-0.19.6.tgz#33a9e25a13f7f6de7f2284187b424b7f481703a5"
+  integrity sha512-Qm690UgsrvUb2QGuJd2qP4x81B3OQo00wPncXyNGNnOQ/gGviCNZzQFa+FLWM9PetTahL53qjHZzTT21r0W3FA==
+  dependencies:
+    advanced-cropper "~0.18.0"
+    classnames "^2.2.6"
+    tslib "^2.4.0"
+
 react-doctor@^0.0.37:
   version "0.0.37"
   resolved "https://registry.yarnpkg.com/react-doctor/-/react-doctor-0.0.37.tgz#e803f407dcbe375ed507627694fe6cd167aa6f44"
@@ -6017,6 +6033,15 @@ react-is@^18.0.0:
   version "18.3.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
+
+react-mobile-cropper@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/react-mobile-cropper/-/react-mobile-cropper-0.10.0.tgz#084f26aae848a4fc9da617f6c82dcc3098f74863"
+  integrity sha512-4/7YIpVtcphJyWguIrYITbodKZ3IkWzrY9F01m4EufmrYnVE594t7F1iR9dxUaVcAfL9W1TBtktUJq3PLSz8/Q==
+  dependencies:
+    classnames "^2.2.6"
+    react-advanced-cropper "~0.19.3"
+    tslib "^2.4.0"
 
 react@^19.2.5:
   version "19.2.5"

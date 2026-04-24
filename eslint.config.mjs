@@ -5,7 +5,7 @@ import unusedImports from 'eslint-plugin-unused-imports'
 
 export default defineConfig([
   {
-    ignores: ['.next', 'build', 'coverage', 'dist', 'node_modules'],
+    ignores: ['.next', '.agents', 'build', 'coverage', 'dist', 'node_modules'],
   },
   eslint.configs.recommended,
   {

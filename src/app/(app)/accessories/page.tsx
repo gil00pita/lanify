@@ -316,7 +316,7 @@ export default function EditorAccessoriesPage() {
                   }}
                 >
                   Save & Submit for approval
-                  <Send width="18px" height="18px" ml="2" />
+                  <Send width="18px" height="18px" />
                 </Button>
               </HStack>
             </MotionBox>

@@ -360,7 +360,7 @@ function AppCardFront(props: {
         transition={'background-color 0.6s ease'}
         bg={color}
       >
-        <Box inset="0" opacity="0.28" position="absolute" top={0} bottom={0} left={0} right={0}>
+        <Box inset="0" opacity="0.5" position="absolute" top={0} bottom={0} left={0} right={0}>
           <SelectorPattern color={color} settings={card.patternSettings} />
         </Box>
 

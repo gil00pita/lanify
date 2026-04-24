@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { type ComponentProps, useEffect, useRef, useState } from 'react'
 
 import {
   Alert,
@@ -15,12 +15,8 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react'
-import {
-  CropperRef,
-  CropperState,
-  ImageRestriction,
-  RectangleStencil,
-} from 'react-advanced-cropper'
+import { CropperState, type CropperRef, RectangleStencil } from 'react-advanced-cropper'
+import { Cropper as MobileCropper } from 'react-mobile-cropper'
 
 import { ImageEditorCanvas } from '@/components/app/ImageEditor'
 import {
@@ -31,17 +27,14 @@ import { colors } from '@/lib/variations'
 import { BlackAndWhiteIcon } from '@/icons/BlackAndWhite'
 import { BrightnessIcon } from '@/icons/BrightnessIcon'
 import { ContrastIcon } from '@/icons/ContrastIcon'
-import { RotateClockWise } from '@/icons/RotateClockWise'
-import { RotateCounterClockWise } from '@/icons/RotateCoutnerClockWise'
-import { FlipHorizontallyIcon } from '@/icons/FlipHorizontallyIcon'
-import { FrameIcon } from '@/icons/Frame'
 import { SaturationIcon } from '@/icons/SaturationIcon'
 import { ZoomPlusIcon } from '@/icons/ZoomPlus'
 import { ZoomMinusIcon } from '@/icons/ZoomMinus'
 
-type EditorTool = 'background' | 'color' | 'crop'
+type EditorTool = 'background' | 'color'
 type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
 type RembgModel = 'birefnet-portrait' | 'u2net_human_seg' | 'u2net'
+type MobileCropperProps = ComponentProps<typeof MobileCropper>
 
 type EditorState = {
   brightness: number
@@ -448,7 +441,7 @@ async function applyShiftEdgeLocally(src: string, shiftEdge: number): Promise<st
 
 export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const { imageSrc, isOpen, onClose, onSave, originalImageSrc, transparentImageSrc } = props
-  const [activeTool, setActiveTool] = useState<EditorTool>('crop')
+  const [activeTool, setActiveTool] = useState<EditorTool>('color')
   const [activeColorControl, setActiveColorControl] = useState<
     'brightness' | 'contrast' | 'saturate' | 'grayscale'
   >('brightness')
@@ -485,7 +478,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const canRedo = historyState.index >= 0 && historyState.index < historyState.entries.length - 1
   const brightness = editorState.brightness
   const contrast = editorState.contrast
-  const flipHorizontal = editorState.flipHorizontal
   const grayscale = editorState.grayscale
   const maskCleanup = editorState.maskCleanup
   const outlineColor = editorState.outlineColor
@@ -493,7 +485,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const rembgEdgePreset = editorState.rembgEdgePreset
   const rembgShiftEdge = editorState.rembgShiftEdge
   const rembgModel = editorState.rembgModel
-  const rotation = editorState.rotation
   const saturate = editorState.saturate
   const hasManualBackgroundSettings =
     maskCleanup !== defaultState.maskCleanup ||
@@ -587,24 +578,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
         isRestoringHistoryRef.current = false
       })
     })
-  }
-
-  function applyRotation(nextRotation: number) {
-    const currentRotation = editorStateRef.current.rotation
-    const rotationDelta = nextRotation - currentRotation
-
-    if (rotationDelta !== 0) {
-      cropperRef.current?.rotateImage(rotationDelta, {
-        immediately: true,
-        normalize: true,
-        transitions: false,
-      })
-    }
-
-    updateEditorState((current) => ({
-      ...current,
-      rotation: nextRotation,
-    }))
   }
 
   function zoomImage(factor: number) {
@@ -754,7 +727,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
       return
     }
 
-    setActiveTool('crop')
+    setActiveTool('color')
     setActiveColorControl('brightness')
     setEditorState(initialState)
     setRawTransparentSrc(hasOriginalSource ? null : (transparentImageSrc ?? null))
@@ -898,7 +871,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const transparentPreviewSrc =
     processedTransparentSrc ?? (hasOriginalSource ? null : transparentImageSrc)
   const currentImageSrc = transparentPreviewSrc ?? processingSourceImage
-  const cropperEnabled = activeTool === 'crop'
+  const cropperEnabled = true
   const isColorTool = activeTool === 'color'
   const isBackgroundTool = activeTool === 'background'
   const navigationMode: ImageNavigationMode = activeTool
@@ -963,7 +936,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 'repeating-linear-gradient(45deg, var(--lanify-colors-bg-emphasized) 25%, var(--lanify-colors-bg) 25%, var(--lanify-colors-bg) 75%, var(--lanify-colors-bg-emphasized) 75%, var(--lanify-colors-bg-emphasized))',
               ].join(', '),
               border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '24px',
+              borderRadius: '40px',
               css: {
                 '--lanify-cropper-guide-color': outlineWidth > 0 ? outlineColor : 'transparent',
               },
@@ -976,7 +949,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             cropperEnabled={cropperEnabled}
             cropperProps={{
               className: 'lanify-profile-cropper',
-              imageRestriction: ImageRestriction.none,
+              imageRestriction: 'none' as MobileCropperProps['imageRestriction'],
               onChange: () => {
                 if (activeTool !== 'background') {
                   scheduleHistoryCommit()
@@ -987,7 +960,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
                 aspectRatio: 1,
                 overlayClassName: 'lanify-profile-cropper-overlay',
               },
-              transitions: false,
             }}
             cropperRef={cropperRef}
             canRedo={canRedo}
@@ -1002,7 +974,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
               clearHistoryCommitTimer()
               setBackgroundError(null)
-              setActiveTool('crop')
+              setActiveTool('color')
               setActiveColorControl('brightness')
               editorStateRef.current = resetEditorState
               rawTransparentSrcRef.current = resetTransparentSrc
@@ -1057,99 +1029,9 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
           <Stack gap="3" overflow="hidden" className="image-controls">
             <Navigation
               mode={navigationMode}
-              modes={['crop', 'color', 'background']}
+              modes={['color', 'background']}
               onChange={(nextMode) => setActiveTool(nextMode)}
             />
-
-            {activeTool === 'crop' ? (
-              <Stack gap="3">
-                <HStack flexWrap="wrap" gap="2" justify="center" color={'fg'}>
-                  <IconButton
-                    onClick={() => zoomImage(0.9)}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <ZoomMinusIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => zoomImage(1.1)}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <ZoomPlusIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      cropperRef.current?.reset()
-                      scheduleHistoryCommit()
-                    }}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <FrameIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => applyRotation(rotation - 90)}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <RotateCounterClockWise />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => applyRotation(rotation + 90)}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <RotateClockWise />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      cropperRef.current?.flipImage(true, false, {
-                        immediately: true,
-                        normalize: true,
-                        transitions: false,
-                      })
-                      updateEditorState((current) => ({
-                        ...current,
-                        flipHorizontal: !current.flipHorizontal,
-                      }))
-                    }}
-                    rounded="full"
-                    size="sm"
-                    variant={flipHorizontal ? 'solid' : 'ghost'}
-                  >
-                    <FlipHorizontallyIcon />
-                  </IconButton>
-                </HStack>
-                <Stack gap="3">
-                  <Text color="fg.muted" fontSize="xs" textAlign="center">
-                    Fine rotation
-                  </Text>
-                  <Slider.Root
-                    aria-label={['Fine rotation']}
-                    colorPalette="primary"
-                    max={45}
-                    min={-45}
-                    onValueChange={(details) => applyRotation(details.value[0] ?? 0)}
-                    origin="center"
-                    size="sm"
-                    value={[rotation]}
-                  >
-                    <Slider.Control>
-                      <Slider.Track>
-                        <Slider.Range />
-                      </Slider.Track>
-                      <Slider.Thumb index={0} />
-                    </Slider.Control>
-                  </Slider.Root>
-                </Stack>
-              </Stack>
-            ) : null}
 
             {isColorTool ? (
               <Stack gap="3">

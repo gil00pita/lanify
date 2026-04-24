@@ -1,9 +1,18 @@
 'use client'
 
 import { Box, IconButton, type BoxProps } from '@chakra-ui/react'
-import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react'
+import {
+  type ChangeEvent,
+  type ComponentProps,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
-import { Cropper, CropperRef, CropperPreview, CropperPreviewRef } from 'react-advanced-cropper'
+import { CropperPreview, type CropperPreviewRef } from 'react-advanced-cropper'
+import { Cropper, type CropperRef } from 'react-mobile-cropper'
 
 import { Avatar } from '@/illustrations/Avatar'
 import { RedoIcon } from '@/icons/Redo'
@@ -12,7 +21,6 @@ import { UndoIcon } from '@/icons/Undo'
 
 import { AdjustableCropperBackground } from './AdjustableCropperBackground'
 import { AdjustablePreviewBackground } from './AdjustablePreviewBackground'
-import { Navigation } from './Navigation'
 import { Slider } from './Slider'
 
 export type ImageEditorMode = 'background' | 'color' | 'crop'
@@ -39,13 +47,6 @@ const defaultAdjustments: ImageEditorAdjustments = {
   outlineWidth: 0,
   saturation: 0,
 }
-
-const adjustmentKeys: Array<
-  keyof Pick<
-    ImageEditorAdjustments,
-    'brightness' | 'contrast' | 'grayscale' | 'hue' | 'outlineWidth' | 'saturation'
-  >
-> = ['brightness', 'contrast', 'grayscale', 'hue', 'outlineWidth', 'saturation']
 
 type ImageEditorCanvasProps = {
   adjustments?: Partial<ImageEditorAdjustments>
@@ -131,7 +132,9 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
       }}
       h="400px"
       maxH="full"
+      rounded={'40px'}
       position="relative"
+      className="image-editor"
       {...containerProps}
     >
       {!src ? (
@@ -220,55 +223,63 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
 }
 
 export function ImageEditor() {
+  const inputRef = useRef<HTMLInputElement>(null)
   const cropperRef = useRef<CropperRef>(null)
-  const previewRef = useRef<CropperPreviewRef>(null)
 
-  const [src, setSrc] = useState<string | undefined>()
-  const [mode, setMode] = useState<ImageEditorMode>('crop')
-  const [adjustments, setAdjustments] = useState<ImageEditorAdjustments>(defaultAdjustments)
+  const [image, setImage] = useState<string>('')
 
-  const onReset = () => {
-    setMode('crop')
-    setAdjustments(defaultAdjustments)
+  const onUpload = () => {
+    inputRef.current?.click()
   }
 
-  const onUpload = (blob: string) => {
-    onReset()
-    setSrc(blob)
-  }
-
-  const onDownload = () => {
-    if (cropperRef.current) {
+  const onCrop = () => {
+    const cropper = cropperRef.current
+    if (cropper) {
+      const canvas = cropper.getCanvas()
       const newTab = window.open()
-      if (newTab) {
-        newTab.document.body.innerHTML = `<img src="${cropperRef.current
-          .getCanvas()
-          ?.toDataURL()}"/>`
+      if (newTab && canvas) {
+        newTab.document.body.innerHTML = `<img src="${canvas.toDataURL()}"></img>`
       }
     }
   }
 
-  const onUpdate = () => {
-    previewRef.current?.refresh()
+  const onLoadImage = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files && event.target.files[0]
+    if (file) {
+      setImage(URL.createObjectURL(file))
+    }
+    event.target.value = ''
   }
 
-  const changed = adjustmentKeys.some((key) => Math.floor((adjustments[key] ?? 0) * 100))
-  const cropperEnabled = mode === 'crop'
+  useEffect(() => {
+    return () => {
+      if (image) {
+        URL.revokeObjectURL(image)
+      }
+    }
+  }, [image])
 
   return (
-    <Box border="1px solid" borderColor="whiteAlpha.200" color="primary.300" maxH="full">
-      <ImageEditorCanvas
-        adjustments={adjustments}
-        cropperEnabled={cropperEnabled}
-        cropperProps={{ onUpdate }}
-        cropperRef={cropperRef}
-        onReset={onReset}
-        previewRef={previewRef}
-        resetButtonVisible={changed}
-        showPreview
-        src={src}
-      />
-      <Navigation mode={mode} onChange={setMode} onUpload={onUpload} onDownload={onDownload} />
-    </Box>
+    <div className="example">
+      <div className="example__cropper-wrapper">
+        <Cropper
+          ref={cropperRef}
+          className="example__cropper"
+          backgroundClassName="example__cropper-background"
+          src={image}
+        />
+      </div>
+      <div className="example__buttons-wrapper">
+        <button className="example__button" onClick={onUpload}>
+          <input ref={inputRef} type="file" accept="image/*" onChange={onLoadImage} />
+          Upload image
+        </button>
+        {image && (
+          <button className="example__button" onClick={onCrop}>
+            Download result
+          </button>
+        )}
+      </div>
+    </div>
   )
 }

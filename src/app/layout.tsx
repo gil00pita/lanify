@@ -4,6 +4,7 @@ import { Space_Grotesk } from 'next/font/google'
 import { Provider } from '@/components/ui/provider'
 
 import './globals.css'
+import './vendor/react-mobile-cropper.css'
 
 const cardSans = Space_Grotesk({
   subsets: ['latin'],
