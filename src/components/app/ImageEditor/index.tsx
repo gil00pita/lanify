@@ -22,6 +22,7 @@ import { UndoIcon } from '@/icons/Undo'
 import { AdjustableCropperBackground } from './AdjustableCropperBackground'
 import { AdjustablePreviewBackground } from './AdjustablePreviewBackground'
 import { Slider } from './Slider'
+import { DownloadIcon } from '@/icons/DownloadIcon'
 
 export type ImageEditorMode = 'background' | 'color' | 'crop'
 
@@ -60,6 +61,7 @@ type ImageEditorCanvasProps = {
   onRedo?: () => void
   onReset?: () => void
   onUndo?: () => void
+  onDownload?: () => void
   previewProps?: Omit<
     CropperPreviewProps,
     'backgroundComponent' | 'backgroundProps' | 'cropper' | 'ref'
@@ -85,6 +87,7 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
     onRedo,
     onReset,
     onUndo,
+    onDownload,
     previewProps,
     previewRef,
     resetButtonVisible = false,
@@ -208,6 +211,11 @@ export function ImageEditorCanvas(props: ImageEditorCanvasProps) {
           {onRedo ? (
             <IconButton aria-label="Redo edit" disabled={!canRedo} onClick={onRedo}>
               <RedoIcon />
+            </IconButton>
+          ) : null}
+          {onDownload ? (
+            <IconButton aria-label="Download image" onClick={onDownload}>
+              <DownloadIcon />
             </IconButton>
           ) : null}
         </Box>

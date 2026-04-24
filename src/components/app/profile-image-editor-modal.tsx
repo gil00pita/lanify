@@ -3,13 +3,14 @@
 import { type ComponentProps, useEffect, useRef, useState } from 'react'
 
 import {
+  Accordion,
   Alert,
   Box,
   Button,
   ColorPicker,
   HStack,
-  IconButton,
   parseColor,
+  RadioCard,
   Slider,
   Spinner,
   Stack,
@@ -24,12 +25,6 @@ import {
   type EditorMode as ImageNavigationMode,
 } from '@/components/app/ImageEditor/Navigation'
 import { colors } from '@/lib/variations'
-import { BlackAndWhiteIcon } from '@/icons/BlackAndWhite'
-import { BrightnessIcon } from '@/icons/BrightnessIcon'
-import { ContrastIcon } from '@/icons/ContrastIcon'
-import { SaturationIcon } from '@/icons/SaturationIcon'
-import { ZoomPlusIcon } from '@/icons/ZoomPlus'
-import { ZoomMinusIcon } from '@/icons/ZoomMinus'
 
 type EditorTool = 'background' | 'color'
 type RembgEdgePreset = 'off' | 'sharp' | 'balanced' | 'soft'
@@ -83,6 +78,110 @@ const defaultState: EditorState = {
 }
 
 const HISTORY_LIMIT = 60
+
+type ColorPreset = {
+  brightness: number
+  contrast: number
+  filter: string
+  grayscale: number
+  id: string
+  label: string
+  saturate: number
+}
+
+const colorPresets: ColorPreset[] = [
+  {
+    brightness: 100,
+    contrast: 100,
+    filter: 'none',
+    grayscale: 0,
+    id: 'original',
+    label: 'Original',
+    saturate: 100,
+  },
+  {
+    brightness: 100,
+    contrast: 105,
+    filter: 'grayscale(1) contrast(1.05)',
+    grayscale: 100,
+    id: 'mono',
+    label: 'Mono',
+    saturate: 0,
+  },
+  {
+    brightness: 110,
+    contrast: 95,
+    filter: 'grayscale(0.3) saturate(0.4) brightness(1.1) contrast(0.95)',
+    grayscale: 30,
+    id: 'silverstone',
+    label: 'Silverstone',
+    saturate: 40,
+  },
+  {
+    brightness: 90,
+    contrast: 140,
+    filter: 'grayscale(1) contrast(1.4) brightness(0.9)',
+    grayscale: 100,
+    id: 'noir',
+    label: 'Noir',
+    saturate: 0,
+  },
+  {
+    brightness: 95,
+    contrast: 130,
+    filter: 'contrast(1.3) brightness(0.95)',
+    grayscale: 0,
+    id: 'dramatic',
+    label: 'Dramatic',
+    saturate: 100,
+  },
+  {
+    brightness: 90,
+    contrast: 130,
+    filter: 'contrast(1.3) brightness(0.9) saturate(0.8)',
+    grayscale: 10,
+    id: 'dramatic-cool',
+    label: 'Dramatic Cool',
+    saturate: 80,
+  },
+  {
+    brightness: 100,
+    contrast: 130,
+    filter: 'contrast(1.3) saturate(1.2)',
+    grayscale: 0,
+    id: 'dramatic-warm',
+    label: 'Dramatic Warm',
+    saturate: 120,
+  },
+  {
+    brightness: 105,
+    contrast: 115,
+    filter: 'contrast(1.15) brightness(1.05) saturate(1.5)',
+    grayscale: 0,
+    id: 'vivid',
+    label: 'Vivid',
+    saturate: 150,
+  },
+  {
+    brightness: 105,
+    contrast: 115,
+    filter: 'contrast(1.15) brightness(1.05) saturate(1.3)',
+    grayscale: 5,
+    id: 'vivid-cool',
+    label: 'Vivid Cool',
+    saturate: 130,
+  },
+  {
+    brightness: 110,
+    contrast: 115,
+    filter: 'contrast(1.15) brightness(1.1) saturate(1.6)',
+    grayscale: 0,
+    id: 'vivid-warm',
+    label: 'Vivid Warm',
+    saturate: 160,
+  },
+]
+
 const colorControls: Array<{
   helper: string
   label: string
@@ -130,22 +229,6 @@ const outlineSwatches = [
   colors.gray6,
   colors.gray7,
 ]
-
-function getColorControlIcon(control: (typeof colorControls)[number]['stateKey']) {
-  if (control === 'brightness') {
-    return <BrightnessIcon />
-  }
-
-  if (control === 'contrast') {
-    return <ContrastIcon />
-  }
-
-  if (control === 'saturate') {
-    return <SaturationIcon />
-  }
-
-  return <BlackAndWhiteIcon />
-}
 
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -442,9 +525,6 @@ async function applyShiftEdgeLocally(src: string, shiftEdge: number): Promise<st
 export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const { imageSrc, isOpen, onClose, onSave, originalImageSrc, transparentImageSrc } = props
   const [activeTool, setActiveTool] = useState<EditorTool>('color')
-  const [activeColorControl, setActiveColorControl] = useState<
-    'brightness' | 'contrast' | 'saturate' | 'grayscale'
-  >('brightness')
   const [backgroundError, setBackgroundError] = useState<string | null>(null)
   const [editorState, setEditorState] = useState<EditorState>(cloneEditorState(defaultState))
   const [historyState, setHistoryState] = useState<{ entries: HistoryEntry[]; index: number }>({
@@ -476,6 +556,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     processingSourceImageRef.current ?? originalImageSrc ?? imageSrc ?? null
   const canUndo = historyState.index > 0
   const canRedo = historyState.index >= 0 && historyState.index < historyState.entries.length - 1
+  const canDownload = Boolean(processedTransparentSrc)
   const brightness = editorState.brightness
   const contrast = editorState.contrast
   const grayscale = editorState.grayscale
@@ -580,39 +661,43 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     })
   }
 
-  function zoomImage(factor: number) {
-    cropperRef.current?.zoomImage(factor, {
-      immediately: true,
-      normalize: true,
-      transitions: false,
+  function buildFinalImage() {
+    const croppedCanvas = cropperRef.current?.getCanvas({
+      height: 1024,
+      imageSmoothingQuality: 'high',
+      width: 1024,
     })
 
-    if (activeTool === 'background') {
-      cropperRef.current?.setCoordinates(
-        ({ coordinates }) => {
-          if (!coordinates) {
-            return {}
-          }
-
-          const nextWidth = coordinates.width * factor
-          const nextHeight = coordinates.height * factor
-
-          return {
-            height: nextHeight,
-            left: coordinates.left - (nextWidth - coordinates.width) / 2,
-            top: coordinates.top - (nextHeight - coordinates.height) / 2,
-            width: nextWidth,
-          }
-        },
-        {
-          immediately: true,
-          transitions: false,
-        }
-      )
+    if (!croppedCanvas) {
+      throw new Error('Could not prepare the cropped image.')
     }
 
-    if (activeTool !== 'background') {
-      scheduleHistoryCommit()
+    const finalCanvas =
+      outlineWidth > 0
+        ? createOutlinedCanvas(croppedCanvas, {
+            strokeColor: outlineColor,
+            strokeWidth: outlineWidth,
+          })
+        : croppedCanvas
+
+    return finalCanvas.toDataURL('image/png')
+  }
+
+  function handleDownload() {
+    if (!canDownload) {
+      return
+    }
+
+    try {
+      const dataUrl = buildFinalImage()
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `profile-image-${Date.now()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch {
+      // Swallow: nothing to download yet.
     }
   }
 
@@ -728,7 +813,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
     }
 
     setActiveTool('color')
-    setActiveColorControl('brightness')
     setEditorState(initialState)
     setRawTransparentSrc(hasOriginalSource ? null : (transparentImageSrc ?? null))
     setProcessedTransparentSrc(hasOriginalSource ? null : (transparentImageSrc ?? null))
@@ -875,8 +959,14 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
   const isColorTool = activeTool === 'color'
   const isBackgroundTool = activeTool === 'background'
   const navigationMode: ImageNavigationMode = activeTool
-  const currentColorControl =
-    colorControls.find((control) => control.stateKey === activeColorControl) ?? colorControls[0]
+  const activeColorPresetId =
+    colorPresets.find(
+      (preset) =>
+        preset.brightness === brightness &&
+        preset.contrast === contrast &&
+        preset.saturate === saturate &&
+        preset.grayscale === grayscale
+    )?.id ?? null
 
   if (!isOpen) {
     return null
@@ -900,11 +990,13 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
         boxShadow="0 30px 90px rgba(0,0,0,0.45)"
         color="fg"
         gap="6"
+        maxH={{ base: 'calc(100dvh - 32px)', md: 'calc(100dvh - 64px)' }}
         maxW="1200px"
         onClick={(event) => event.stopPropagation()}
+        overflow="hidden"
         p={{ base: '5', md: '7' }}
       >
-        <HStack justify="space-between">
+        <HStack flexShrink={0} justify="space-between">
           <Stack gap="1">
             <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="600">
               Edit Current Picture
@@ -915,7 +1007,16 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
           </Stack>
         </HStack>
 
-        <Stack gap="4">
+        <Stack
+          gap="0"
+          minH="0"
+          overflowY="auto"
+          overscrollBehavior="contain"
+          css={{
+            scrollbarWidth: 'thin',
+            '&::-webkit-scrollbar': { width: '8px' },
+          }}
+        >
           <ImageEditorCanvas
             adjustments={{
               brightness: (brightness - 100) / 100,
@@ -963,6 +1064,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             }}
             cropperRef={cropperRef}
             canRedo={canRedo}
+            onDownload={canDownload ? handleDownload : undefined}
             canUndo={canUndo}
             onRedo={handleRedo}
             onReset={() => {
@@ -975,7 +1077,6 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
               clearHistoryCommitTimer()
               setBackgroundError(null)
               setActiveTool('color')
-              setActiveColorControl('brightness')
               editorStateRef.current = resetEditorState
               rawTransparentSrcRef.current = resetTransparentSrc
               processedTransparentSrcRef.current = resetTransparentSrc
@@ -1026,7 +1127,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             ) : null}
           </ImageEditorCanvas>
 
-          <Stack gap="3" overflow="hidden" className="image-controls">
+          <Stack gap="3" overflowY="auto" p={4} className="image-controls" flex-shrink={0}>
             <Navigation
               mode={navigationMode}
               modes={['color', 'background']}
@@ -1034,111 +1135,201 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
             />
 
             {isColorTool ? (
-              <Stack gap="3">
-                <HStack flexWrap="wrap" gap="2" justify="center" color="fg">
-                  {colorControls.map((control) => (
-                    <IconButton
-                      key={control.stateKey}
-                      aria-label={control.label}
-                      onClick={() => setActiveColorControl(control.stateKey)}
-                      rounded="full"
-                      variant={activeColorControl === control.stateKey ? 'solid' : 'ghost'}
-                    >
-                      {getColorControlIcon(control.stateKey)}
-                    </IconButton>
-                  ))}
-                </HStack>
-                <HStack justify="space-between">
-                  <Text fontSize="sm" fontWeight="600">
-                    {currentColorControl.label}
-                  </Text>
-                  <Text color="fg.muted" fontSize="xs">
-                    {currentColorControl.stateKey === 'brightness'
-                      ? brightness
-                      : currentColorControl.stateKey === 'contrast'
-                        ? contrast
-                        : currentColorControl.stateKey === 'saturate'
-                          ? saturate
-                          : grayscale}
-                  </Text>
-                </HStack>
-                <Slider.Root
-                  aria-label={[currentColorControl.label]}
+              <Stack gap="4">
+                <RadioCard.Root
                   colorPalette="primary"
-                  max={currentColorControl.max}
-                  min={currentColorControl.min}
                   onValueChange={(details) => {
-                    const nextValue = details.value[0] ?? currentColorControl.min
-
-                    if (currentColorControl.stateKey === 'brightness') {
-                      updateEditorState((current) => ({
-                        ...current,
-                        brightness: nextValue,
-                      }))
-                    } else if (currentColorControl.stateKey === 'contrast') {
-                      updateEditorState((current) => ({
-                        ...current,
-                        contrast: nextValue,
-                      }))
-                    } else if (currentColorControl.stateKey === 'saturate') {
-                      updateEditorState((current) => ({
-                        ...current,
-                        saturate: nextValue,
-                      }))
-                    } else {
-                      updateEditorState((current) => ({
-                        ...current,
-                        grayscale: nextValue,
-                      }))
-                    }
+                    const preset = colorPresets.find((entry) => entry.id === details.value)
+                    if (!preset) return
+                    updateEditorState((current) => ({
+                      ...current,
+                      brightness: preset.brightness,
+                      contrast: preset.contrast,
+                      grayscale: preset.grayscale,
+                      saturate: preset.saturate,
+                    }))
                   }}
-                  size="sm"
-                  step={currentColorControl.step}
-                  value={[
-                    currentColorControl.stateKey === 'brightness'
-                      ? brightness
-                      : currentColorControl.stateKey === 'contrast'
-                        ? contrast
-                        : currentColorControl.stateKey === 'saturate'
-                          ? saturate
-                          : grayscale,
-                  ]}
+                  orientation="horizontal"
+                  value={activeColorPresetId}
+                  variant="outline"
                 >
-                  <Slider.Control>
-                    <Slider.Track>
-                      <Slider.Range />
-                    </Slider.Track>
-                    <Slider.Thumb index={0} />
-                  </Slider.Control>
-                </Slider.Root>
-                <Text color="fg.muted" fontSize="xs" textAlign="center">
-                  {currentColorControl.helper}
-                </Text>
+                  <HStack
+                    align="stretch"
+                    gap="3"
+                    overflowX="auto"
+                    pb="2"
+                    className="filters-container"
+                    maxW={'540px'}
+                    flexWrap={'wrap'}
+                    justifyContent={'center'}
+                    p={'2px'}
+                    css={{
+                      scrollbarWidth: 'thin',
+                      '&::-webkit-scrollbar': { height: '6px' },
+                    }}
+                  >
+                    {colorPresets.map((preset) => {
+                      const isSelected = activeColorPresetId === preset.id
+
+                      return (
+                        <RadioCard.Item
+                          key={preset.id}
+                          value={preset.id}
+                          width={'80px'}
+                          flex="0 0 auto"
+                          rounded="xl"
+                        >
+                          <RadioCard.ItemHiddenInput />
+                          <RadioCard.ItemControl
+                            alignItems="center"
+                            display="flex"
+                            flexDirection="column"
+                            gap="1"
+                            h="auto"
+                            p="6px"
+                            pb="4px"
+                            rounded="3xl"
+                          >
+                            <Box
+                              border="1px solid {colors.border/50}"
+                              h="64px"
+                              w="64px"
+                              overflow="hidden"
+                              rounded="xl"
+                              position="relative"
+                              bg="bg.muted"
+                              opacity={isSelected ? 1 : 0.85}
+                              transition="opacity 160ms ease, transform 160ms ease"
+                              transform={isSelected ? 'scale(1.02)' : 'scale(1)'}
+                            >
+                              {currentImageSrc ? (
+                                <img
+                                  alt={preset.label}
+                                  src={currentImageSrc}
+                                  style={{
+                                    display: 'block',
+                                    filter: preset.filter,
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    width: '100%',
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  alignItems="center"
+                                  display="flex"
+                                  h="full"
+                                  justifyContent="center"
+                                  w="full"
+                                >
+                                  <Text color="fg.muted" fontSize="2xs">
+                                    No image
+                                  </Text>
+                                </Box>
+                              )}
+                            </Box>
+                            <RadioCard.ItemText
+                              fontSize="2xs"
+                              fontWeight="600"
+                              textAlign="center"
+                              maxWidth={'100%'}
+                              lineHeight={1.4}
+                            >
+                              {preset.label}
+                            </RadioCard.ItemText>
+                          </RadioCard.ItemControl>
+                        </RadioCard.Item>
+                      )
+                    })}
+                  </HStack>
+                </RadioCard.Root>
+
+                <Accordion.Root collapsible variant="plain">
+                  <Accordion.Item value="advanced">
+                    <Accordion.ItemTrigger>
+                      <Text flex="1" fontSize="sm" fontWeight="600" textAlign="left">
+                        Advanced
+                      </Text>
+                      <Accordion.ItemIndicator />
+                    </Accordion.ItemTrigger>
+                    <Accordion.ItemContent>
+                      <Stack gap="5" pt="3">
+                        {colorControls.map((control) => {
+                          const value =
+                            control.stateKey === 'brightness'
+                              ? brightness
+                              : control.stateKey === 'contrast'
+                                ? contrast
+                                : control.stateKey === 'saturate'
+                                  ? saturate
+                                  : grayscale
+
+                          return (
+                            <Stack key={control.stateKey} gap="2">
+                              <HStack justify="space-between">
+                                <Text fontSize="sm" fontWeight="600">
+                                  {control.label}
+                                </Text>
+                                <Text color="fg.muted" fontSize="xs">
+                                  {value}
+                                </Text>
+                              </HStack>
+                              <Slider.Root
+                                aria-label={[control.label]}
+                                colorPalette="primary"
+                                max={control.max}
+                                min={control.min}
+                                onValueChange={(details) => {
+                                  const nextValue = details.value[0] ?? control.min
+
+                                  if (control.stateKey === 'brightness') {
+                                    updateEditorState((current) => ({
+                                      ...current,
+                                      brightness: nextValue,
+                                    }))
+                                  } else if (control.stateKey === 'contrast') {
+                                    updateEditorState((current) => ({
+                                      ...current,
+                                      contrast: nextValue,
+                                    }))
+                                  } else if (control.stateKey === 'saturate') {
+                                    updateEditorState((current) => ({
+                                      ...current,
+                                      saturate: nextValue,
+                                    }))
+                                  } else {
+                                    updateEditorState((current) => ({
+                                      ...current,
+                                      grayscale: nextValue,
+                                    }))
+                                  }
+                                }}
+                                size="sm"
+                                step={control.step}
+                                value={[value]}
+                              >
+                                <Slider.Control>
+                                  <Slider.Track>
+                                    <Slider.Range />
+                                  </Slider.Track>
+                                  <Slider.Thumb index={0} />
+                                </Slider.Control>
+                              </Slider.Root>
+                              <Text color="fg.muted" fontSize="xs">
+                                {control.helper}
+                              </Text>
+                            </Stack>
+                          )
+                        })}
+                      </Stack>
+                    </Accordion.ItemContent>
+                  </Accordion.Item>
+                </Accordion.Root>
               </Stack>
             ) : null}
 
             {isBackgroundTool ? (
               <Stack gap="3">
-                <HStack flexWrap="wrap" gap="2" justify="center" color="fg">
-                  <IconButton
-                    aria-label="Zoom out for background cleanup"
-                    onClick={() => zoomImage(0.9)}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <ZoomMinusIcon />
-                  </IconButton>
-                  <IconButton
-                    aria-label="Zoom in for background cleanup"
-                    onClick={() => zoomImage(1.1)}
-                    rounded="full"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <ZoomPlusIcon />
-                  </IconButton>
-                </HStack>
                 <HStack justify="space-between">
                   <Text fontSize="sm" fontWeight="600">
                     Shift edge
@@ -1260,7 +1451,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
           </Stack>
         </Stack>
 
-        <HStack justify="flex-end">
+        <HStack flexShrink={0} justify="flex-end">
           <HStack gap="3">
             <Button onClick={onClose} variant="outline">
               Cancel
@@ -1275,25 +1466,7 @@ export function ProfileImageEditorModal(props: ProfileImageEditorModalProps) {
 
                 setIsSaving(true)
                 try {
-                  const croppedCanvas = cropperRef.current?.getCanvas({
-                    height: 1024,
-                    imageSmoothingQuality: 'high',
-                    width: 1024,
-                  })
-
-                  if (!croppedCanvas) {
-                    throw new Error('Could not prepare the cropped image.')
-                  }
-
-                  const finalCanvas =
-                    outlineWidth > 0
-                      ? createOutlinedCanvas(croppedCanvas, {
-                          strokeColor: outlineColor,
-                          strokeWidth: outlineWidth,
-                        })
-                      : croppedCanvas
-
-                  onSave(finalCanvas.toDataURL('image/png'))
+                  onSave(buildFinalImage())
                 } finally {
                   setIsSaving(false)
                 }

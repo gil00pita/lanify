@@ -5,11 +5,10 @@ import { type ChangeEvent, type FC, useRef } from 'react'
 
 import { BackgroundIcon } from '@/icons/BackgroundIcon'
 import { ColorIcon } from '@/icons/ColorIcon'
-import { CropIcon } from '@/icons/CropIcon'
 import { DownloadIcon } from '@/icons/DownloadIcon'
 import { UploadIcon } from '@/icons/UploadIcon'
 
-export type EditorMode = 'background' | 'color' | 'crop'
+export type EditorMode = 'background' | 'color'
 
 interface Props {
   mode?: EditorMode
@@ -19,16 +18,9 @@ interface Props {
   onUpload?: (blob: string) => void
 }
 
-const defaultModes: EditorMode[] = ['crop', 'color', 'background']
+const defaultModes: EditorMode[] = ['color', 'background']
 
 function getModeButton(mode: EditorMode) {
-  if (mode === 'crop') {
-    return {
-      ariaLabel: 'Crop mode',
-      content: <CropIcon />,
-    }
-  }
-
   if (mode === 'color') {
     return {
       ariaLabel: 'Color adjustment mode',
@@ -91,6 +83,11 @@ export const Navigation: FC<Props> = ({
         size={{ base: 'sm', sm: 'md' }}
         value={mode}
         minW={'0'}
+        maxW="full"
+        css={{
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': { height: '4px' },
+        }}
       >
         <SegmentGroup.Indicator bg={'bg'} />
         {modes.map((nextMode) => {

@@ -29,7 +29,7 @@ export function RedirectGate() {
   return (
     <Box display="grid" minH="100vh" placeItems="center">
       <VStack bg="rgba(255,255,255,0.72)" borderRadius="24px" p="8">
-        <Spinner color="var(--lanyard-accent)" size="xl" />
+        <Spinner colorPalette="primary" size="xl" />
         <Text fontWeight="600">Preparing your card workspace…</Text>
       </VStack>
     </Box>

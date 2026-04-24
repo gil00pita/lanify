@@ -3,16 +3,25 @@
 import { useEffect, useState } from 'react'
 
 import { Alert, Box, Button, Grid, Heading, Stack, Text, VStack } from '@chakra-ui/react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
-import { Avatar } from '@/illustrations/Avatar'
 import { ProfileImageEditorModal } from '@/components/app/profile-image-editor-modal'
 import { ProfileReviewForm } from '@/components/app/profile-review-form'
 import { frostedGlass } from '@/lib/ui-tokens'
 import { useAppStore } from '@/store/app-store'
 import { LongArrowIcon } from '@/icons/LongArrowIcon'
 
-const sampleCards = [
+const profileImages = [
+  '/profile-image-01.png',
+  '/profile-image-02.png',
+  '/profile-image-03.png',
+  '/profile-image-04.png',
+  '/profile-image-05.png',
+  '/profile-image-06.png',
+] as const
+
+const sampleCardColors = [
   { accent: '#f0e6d3', foreground: '#2d241b' },
   { accent: '#54ef8c', foreground: '#173c20' },
   { accent: '#2496ca', foreground: '#eef8fe' },
@@ -43,10 +52,37 @@ const sampleCards = [
   { accent: '#2c96d0', foreground: '#eaf6fc' },
   { accent: '#f06925', foreground: '#fff0df' },
   { accent: '#046f0d', foreground: '#e8fce7' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
+  { accent: '#1f1d1d', foreground: '#fbf5e8' },
+  { accent: '#dd4215', foreground: '#fff1df' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
+  { accent: '#a7f0ef', foreground: '#2c6170' },
+  { accent: '#304ce9', foreground: '#edf1ff' },
+  { accent: '#8b0089', foreground: '#f8d9ff' },
+  { accent: '#2c96d0', foreground: '#eaf6fc' },
+  { accent: '#f06925', foreground: '#fff0df' },
+  { accent: '#046f0d', foreground: '#e8fce7' },
   { accent: '#564c37', foreground: '#f1ebdf' },
 ]
 
-function BackgroundSampleCard(props: { accent: string; foreground: string }) {
+const sampleCards = sampleCardColors.map((card, index) => ({
+  ...card,
+  id: `sample-card-${index + 1}`,
+  loading: index < profileImages.length ? ('eager' as const) : ('lazy' as const),
+  portraitImage: profileImages[index % profileImages.length] ?? profileImages[0],
+}))
+
+const backgroundPatternCells = Array.from({ length: 30 }, (_, index) => ({
+  id: `pattern-cell-${index + 1}`,
+  transform: index % 2 === 0 ? 'scale(0.78)' : 'scale(0.58)',
+}))
+
+function BackgroundSampleCard(props: {
+  accent: string
+  foreground: string
+  loading: 'eager' | 'lazy'
+  portraitImage: (typeof profileImages)[number]
+}) {
   return (
     <Box
       bg={props.accent}
@@ -75,27 +111,38 @@ function BackgroundSampleCard(props: { accent: string; foreground: string }) {
             templateRows="repeat(5, 1fr)"
             w="100%"
           >
-            {Array.from({ length: 30 }, (_, index) => (
+            {backgroundPatternCells.map((cell) => (
               <Box
                 bg="rgba(255,255,255,0.34)"
                 borderRadius="4px"
-                key={index}
-                transform={index % 2 === 0 ? 'scale(0.78)' : 'scale(0.58)'}
+                key={cell.id}
+                transform={cell.transform}
               />
             ))}
           </Grid>
         </Box>
         <Box
           alignItems="flex-end"
-          color="rgba(255,255,255,0.92)"
           display="flex"
           h="100%"
           justifyContent="center"
-          insetX="14%"
+          insetX="0"
           position="absolute"
           top="0"
         >
-          <Avatar height="82%" width="82%" />
+          <Box bottom="-8px" h="100%" position="absolute" w="94%">
+            <Image
+              alt=""
+              fill
+              loading={props.loading}
+              sizes="240px"
+              src={props.portraitImage}
+              style={{
+                objectFit: 'contain',
+                objectPosition: 'bottom center',
+              }}
+            />
+          </Box>
         </Box>
       </Box>
 
@@ -174,14 +221,17 @@ export default function WizardPage() {
           md: 'repeat(4, 240px)',
           lg: 'repeat(6, 240px)',
           xl: 'repeat(8, 240px)',
+          '2xl': 'repeat(14, 240px)',
         }}
         templateRows={{ base: 'repeat(3, 1fr)' }}
       >
-        {sampleCards.map((card, index) => (
+        {sampleCards.map((card) => (
           <BackgroundSampleCard
             accent={card.accent}
             foreground={card.foreground}
-            key={`${card.accent}-${index}`}
+            key={card.id}
+            loading={card.loading}
+            portraitImage={card.portraitImage}
           />
         ))}
       </Grid>

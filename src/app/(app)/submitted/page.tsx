@@ -104,6 +104,10 @@ export default function SubmittedAccessoriesPage() {
                   <Text fontSize="md" lineHeight="1.6">
                     The approval process usually takes around 5 working days.
                   </Text>
+                  <Text fontSize="md" lineHeight="1.6">
+                    This is a prototype. If you have any feedback, please me know on
+                    hello@gilalvaro.com.
+                  </Text>
                 </Stack>
               </Stack>
             </MotionBox>
