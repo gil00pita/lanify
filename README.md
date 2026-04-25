@@ -4,7 +4,7 @@ Minimal Next.js App Router starter wired up with Chakra UI.
 
 ## Demo
 
-<video src="public/Demo.mp4" controls width="100%"></video>
+[![Demo](public/Snaptshot.png)](public/Demo.mp4)
 
 [View demo video](public/Demo.mp4)
 
@@ -25,6 +25,7 @@ yarn dev
 Lanify now supports manual background removal for uploaded profile photos.
 
 The current flow is:
+
 - upload a profile photo
 - the image editor opens automatically
 - click `Remove Background`
@@ -53,6 +54,7 @@ When running inside Docker Compose, the `web` container uses `http://rembg:7000`
 ## Docker
 
 The repo includes:
+
 - `Dockerfile` for the Next.js app
 - `rembg-service/Dockerfile` for the Python `rembg` API
 - `docker-compose.yml` for local multi-container development
@@ -72,6 +74,7 @@ docker compose up --build
 ```
 
 Ports:
+
 - `3000` for the Next.js app
 - `7000` is only exposed on the internal Compose network for `rembg`
 

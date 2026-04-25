@@ -597,7 +597,7 @@ export function AppCard(props: AppCardProps) {
           (isSelected
             ? '0 30px 80px rgba(17,16,13,0.32)'
             : isCustomizing
-              ? '0 24px 60px rgba(17,16,13,0.24)'
+              ? '0 30px 90px rgba(30,27,22,0.16)'
               : '0 12px 28px rgba(17,16,13,0.16)')
         }
         border="1px solid #0000003b"

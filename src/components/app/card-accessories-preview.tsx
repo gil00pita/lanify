@@ -82,7 +82,7 @@ export function CardAccessoriesPreview(props: { card: CardDesign }) {
           width="336px"
         />
       </Box>
-      <Box insetX={0} p={0} position="relative" zIndex="1">
+      <Box insetX={0} p={0} position="relative" zIndex="1" mb={'58px'}>
         <CardPreview
           card={card}
           cardInsetShadow="inset 0px 1px 13px 0px rgba(0,0,0,0.21)"
