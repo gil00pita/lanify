@@ -4,9 +4,7 @@ Minimal Next.js App Router starter wired up with Chakra UI.
 
 ## Demo
 
-[![Demo](public/Snaptshot.png)](public/Demo.mp4)
-
-[View demo video](public/Demo.mp4)
+<img width="1280" height="720" alt="lanify" src="https://github.com/user-attachments/assets/ad4e4560-24a6-44f5-8634-0956e0686ef7" />
 
 ## Requirements
 
