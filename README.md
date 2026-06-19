@@ -1,10 +1,34 @@
 # Lanify
 
-Minimal Next.js App Router starter wired up with Chakra UI.
+A tool that lets new employees personalise their lanyard during onboarding within 2 minutes, while keeping output on-brand.
+Used Next.js wired up with Chakra UI.
+
+[Case study](https://gilalvaro.com/article/designing-with-codex-a-6-day-ai-workflow-experiment)
 
 ## Demo
 
 <img width="1280" height="720" alt="lanify" src="https://github.com/user-attachments/assets/ad4e4560-24a6-44f5-8634-0956e0686ef7" />
+
+## Userflow:
+
+**Profile Picture Upload**
+- Users start by uploading a profile picture or taking a photo. The screen explains the requirement clearly: use a simple, uniform background.
+Once the image is ready, the state changes to show edit and remove actions.
+
+**Portrait Editing**
+Users edit their current picture before saving it back into the profile. They adjust crop, rotation, and filters inside a focused modal.
+
+**Card Variation Selection**
+After the portrait is ready, Lanify shows multiple card designs using different colours and patterns.
+This step helps users move fast by selecting a strong starting point.
+
+**Card Customisation**
+Users customise the selected card with brand-approved colours, SVG patterns, pattern colours, and advanced controls.
+The live preview makes each decision visible immediately.
+
+**Lanyard and Holder Customisation**
+The final step lets users choose the lanyard colour and card holder finish.
+This closes the loop between the digital card design and the physical object employees receive.
 
 ## Requirements
 
