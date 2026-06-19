@@ -16,7 +16,7 @@ Used Next.js wired up with Chakra UI.
 Once the image is ready, the state changes to show edit and remove actions.
 
 **Portrait Editing**
--Users edit their current picture before saving it back into the profile. They adjust crop, rotation, and filters inside a focused modal.
+- Users edit their current picture before saving it back into the profile. They adjust crop, rotation, and filters inside a focused modal.
 
 **Card Variation Selection**
 - After the portrait is ready, Lanify shows multiple card designs using different colours and patterns.
