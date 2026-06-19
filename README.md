@@ -16,19 +16,19 @@ Used Next.js wired up with Chakra UI.
 Once the image is ready, the state changes to show edit and remove actions.
 
 **Portrait Editing**
-Users edit their current picture before saving it back into the profile. They adjust crop, rotation, and filters inside a focused modal.
+-Users edit their current picture before saving it back into the profile. They adjust crop, rotation, and filters inside a focused modal.
 
 **Card Variation Selection**
-After the portrait is ready, Lanify shows multiple card designs using different colours and patterns.
-This step helps users move fast by selecting a strong starting point.
+- After the portrait is ready, Lanify shows multiple card designs using different colours and patterns.
+- This step helps users move fast by selecting a strong starting point.
 
 **Card Customisation**
-Users customise the selected card with brand-approved colours, SVG patterns, pattern colours, and advanced controls.
-The live preview makes each decision visible immediately.
+- Users customise the selected card with brand-approved colours, SVG patterns, pattern colours, and advanced controls.
+- The live preview makes each decision visible immediately.
 
 **Lanyard and Holder Customisation**
-The final step lets users choose the lanyard colour and card holder finish.
-This closes the loop between the digital card design and the physical object employees receive.
+- The final step lets users choose the lanyard colour and card holder finish.
+- This closes the loop between the digital card design and the physical object employees receive.
 
 ## Requirements
 
