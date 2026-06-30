@@ -1,103 +1,126 @@
 # Lanify
 
-A tool that lets new employees personalise their lanyard during onboarding within 2 minutes, while keeping output on-brand.
-Used Next.js wired up with Chakra UI.
+_A lanyard and employee badge customisation accelerator for onboarding experiences._
 
-[Case study](https://gilalvaro.com/article/designing-with-codex-a-6-day-ai-workflow-experiment)
+> Lanify provides a reusable Next.js experience for creating on-brand employee lanyards and badge cards, contributing a polished onboarding asset to the AI Exchange ecosystem.
 
-## Demo
+---
 
-<img width="1280" height="720" alt="lanify" src="https://github.com/user-attachments/assets/ad4e4560-24a6-44f5-8634-0956e0686ef7" />
+## Overview
 
-## Userflow:
+Lanify helps new employees personalise their lanyard and badge card during onboarding while keeping every output aligned with approved brand rules. It exists as a reusable frontend accelerator that combines profile photo editing, badge design variation, and physical lanyard configuration into a fast guided flow.
 
-**Profile Picture Upload**
-- Users start by uploading a profile picture or taking a photo. The screen explains the requirement clearly: use a simple, uniform background.
-Once the image is ready, the state changes to show edit and remove actions.
+- Solves the problem of collecting consistent, production-ready badge customisations without requiring manual design support.
+- Benefits onboarding, HR, workplace experience, brand, and internal tooling teams that need a lightweight self-service personalisation flow.
+- Provides guided profile image upload, portrait editing, background removal, badge variation selection, card customisation, and lanyard finish selection.
 
-**Portrait Editing**
-- Users edit their current picture before saving it back into the profile. They adjust crop, rotation, and filters inside a focused modal.
+Example:
 
-**Card Variation Selection**
-- After the portrait is ready, Lanify shows multiple card designs using different colours and patterns.
-- This step helps users move fast by selecting a strong starting point.
+> This repository provides a reusable framework for building an employee badge and lanyard customisation journey using standard Next.js and CGI AI Exchange delivery patterns.
 
-**Card Customisation**
-- Users customise the selected card with brand-approved colours, SVG patterns, pattern colours, and advanced controls.
-- The live preview makes each decision visible immediately.
+---
 
-**Lanyard and Holder Customisation**
-- The final step lets users choose the lanyard colour and card holder finish.
-- This closes the loop between the digital card design and the physical object employees receive.
+## Getting Started
 
-## Requirements
+Follow these steps to run Lanify locally or package it for deployment.
 
-- Node.js 20.9.0 or newer
-- Yarn
+### Prerequisites
 
-## Development
+List tools, dependencies, or access requirements.
 
-```bash
-yarn install
-yarn dev
-```
+    node >= 20.9.0
+    yarn
+    docker >= 24.0.0              # Optional, for the background-removal service
+    docker compose                # Optional, for local multi-container execution
 
-## Background Removal
+### Installation / Setup
 
-Lanify now supports manual background removal for uploaded profile photos.
+Clone the repository and install the frontend dependencies.
 
-The current flow is:
+    git clone https://github.paeuinsource.ent.cgi.com/AI-Exchange/lanify.git
+    cd lanify
+    yarn install
 
-- upload a profile photo
-- the image editor opens automatically
-- click `Remove Background`
-- the app posts the original image to `POST /api/remove-background`
-- the Next.js route forwards the image to the internal `rembg` service
-- the transparent PNG is stored in `avatarTransparentUrl`
+Create a local environment file if you want to use the background-removal integration.
 
-The original upload remains in `avatarUrl`, so the app can always fall back safely if background removal fails.
+    cp .env.example .env.local
 
-## Environment Variables
+Default local value:
 
-Create a local env file from the example and point it at the `rembg` service you want the Next.js server to use:
+    REMBG_SERVICE_URL=http://localhost:7000
 
-```bash
-cp .env.example .env.local
-```
+Run the Next.js development server.
 
-Default:
+    yarn dev
 
-```bash
-REMBG_SERVICE_URL=http://localhost:7000
-```
+The application will be available at:
 
-When running inside Docker Compose, the `web` container uses `http://rembg:7000`.
+    http://localhost:3000
 
-## Docker
+To run the web app together with the private Python `rembg` service, use Docker Compose.
 
-The repo includes:
+    docker compose up --build
 
-- `Dockerfile` for the Next.js app
-- `rembg-service/Dockerfile` for the Python `rembg` API
-- `docker-compose.yml` for local multi-container development
+### Example Usage
 
-Build and start both services with:
+Start the local app and complete the guided onboarding flow.
 
-```bash
-docker compose up --build
-```
+    yarn dev
 
-For day-to-day development, the `web` service mounts only `src` and a few Next.js config files. The rest of the app, including `node_modules`, stays inside the container image, which avoids the slow full-repo bind mount and the expensive `node_modules` volume population step.
+Minimum happy path:
 
-If you change `package.json` or `yarn.lock`, rebuild the image:
+    1. Open http://localhost:3000
+    2. Upload or capture a profile photo
+    3. Edit crop, rotation, and filters
+    4. Remove the background if needed
+    5. Select a badge variation
+    6. Customise card colours, SVG patterns, and pattern colours
+    7. Choose lanyard colour and holder finish
+    8. Submit the print request
 
-```bash
-docker compose up --build
-```
+Useful project commands:
 
-Ports:
+    yarn build          # Create a production build
+    yarn start          # Start the production server
+    yarn lint           # Run ESLint
+    yarn lint:fix       # Run ESLint with automatic fixes
+    yarn format:check   # Check Prettier formatting
+    yarn format         # Format the repository
 
-- `3000` for the Next.js app
-- `7000` is only exposed on the internal Compose network for `rembg`
+## Repository Structure
 
-The `rembg` service is intentionally private behind the Next.js route so the browser never talks to it directly.
+Important directories and files:
+
+    ├── docs/                         # Additional implementation documentation
+    ├── public/                       # Static public assets
+    ├── rembg-service/                # Python background-removal API service
+    │   ├── app.py                    # rembg service application entry point
+    │   ├── Dockerfile                # Container image for the rembg service
+    │   └── requirements.txt          # Python service dependencies
+    ├── src/                          # Next.js application source code
+    │   ├── app/                      # App Router pages, layouts, and API routes
+    │   ├── components/               # App and UI components
+    │   ├── icons/                    # SVG icon components
+    │   ├── illustrations/            # Illustration components
+    │   ├── lib/                      # Domain rules, mock data, tokens, and utilities
+    │   ├── store/                    # Zustand application store
+    │   ├── theme/                    # Chakra UI theme configuration
+    │   └── types/                    # Shared TypeScript domain types
+    ├── docker-compose.yml            # Local multi-container setup
+    ├── Dockerfile                    # Next.js app container image
+    ├── eslint.config.mjs             # ESLint configuration
+    ├── next.config.mjs               # Next.js configuration
+    ├── package.json                  # Scripts and dependencies
+    ├── tsconfig.json                 # TypeScript configuration
+    └── README.md                     # Project overview and usage guide
+
+## Outputs / Deliverables
+
+Key deliverables from this repository include:
+
+- A Next.js web application for employee lanyard and badge personalisation.
+- A guided onboarding flow covering profile image upload, portrait editing, card selection, card customisation, and print request submission.
+- A private `POST /api/remove-background` route that forwards uploaded images to the internal `rembg` service.
+- A Dockerised Python background-removal service for generating transparent PNG profile images.
+- Reusable UI components, domain rules, mock data, theme configuration, and card variation logic.
+- Production build output generated through `yarn build` or the provided Dockerfile.
